@@ -73,7 +73,7 @@ function useDeepResearch() {
     for await (const part of result.fullStream) {
       if (part.type === "text-delta") {
         thinkTagStreamProcessor.processChunk(
-          part.textDelta,
+          part.text,
           (data) => {
             content += data;
             updateQuestions(content);
@@ -82,8 +82,8 @@ function useDeepResearch() {
             reasoning += data;
           }
         );
-      } else if ((part as any).type === "reasoning-delta") {
-        reasoning += (part as any).textDelta;
+      } else if (part.type === "reasoning-delta") {
+        reasoning += part.text;
       }
     }
     if (reasoning) logger.log(reasoning);
@@ -108,7 +108,7 @@ function useDeepResearch() {
     for await (const part of result.fullStream) {
       if (part.type === "text-delta") {
         thinkTagStreamProcessor.processChunk(
-          part.textDelta,
+          part.text,
           (data) => {
             content += data;
             updateReportPlan(content);
@@ -117,8 +117,8 @@ function useDeepResearch() {
             reasoning += data;
           }
         );
-      } else if ((part as any).type === "reasoning-delta") {
-        reasoning += (part as any).textDelta;
+      } else if (part.type === "reasoning-delta") {
+        reasoning += part.text;
       }
     }
     if (reasoning) logger.log(reasoning);
@@ -157,8 +157,7 @@ function useDeepResearch() {
       for await (const part of searchResult.fullStream) {
         if (part.type === "text-delta") {
           thinkTagStreamProcessor.processChunk(
-            
-            part.textDelta,
+            part.text,
             (data) => {
               content += data;
               updateTask(query, { learning: content });
@@ -167,9 +166,8 @@ function useDeepResearch() {
               reasoning += data;
             }
           );
-        } else if ((part as any).type === "reasoning-delta") {
-          
-          reasoning += (part as any).textDelta;
+        } else if (part.type === "reasoning-delta") {
+          reasoning += part.text;
         }
       }
       if (reasoning) logger.log(reasoning);
@@ -366,8 +364,7 @@ function useDeepResearch() {
             for await (const part of searchResult.fullStream) {
               if (part.type === "text-delta") {
                 thinkTagStreamProcessor.processChunk(
-                  
-                  part.textDelta,
+                  part.text,
                   (data) => {
                     content += data;
                     updateTask(item.query, { learning: content });
@@ -376,16 +373,12 @@ function useDeepResearch() {
                     reasoning += data;
                   }
                 );
-              } else if ((part as any).type === "reasoning-delta") {
-                
-                reasoning += (part as any).textDelta;
+              } else if (part.type === "reasoning-delta") {
+                reasoning += part.text;
               } else if (part.type === "source") {
-                
                 sources.push(part.source);
               } else if (part.type === "finish") {
-                
                 if (part.providerOptions?.google) {
-                  
                   const { groundingMetadata } = part.providerOptions.google;
                   const googleGroundingMetadata =
                     groundingMetadata as GoogleGenerativeAIProviderMetadata["groundingMetadata"];
@@ -404,7 +397,6 @@ function useDeepResearch() {
                       }
                     );
                   }
-                  
                 } else if (part.providerOptions?.openai) {
                   // Fixed the problem that OpenAI cannot generate markdown reference link syntax properly in Chinese context
                   content = content.replaceAll("【", "[").replaceAll("】", "]");
@@ -571,8 +563,7 @@ function useDeepResearch() {
     for await (const part of result.fullStream) {
       if (part.type === "text-delta") {
         thinkTagStreamProcessor.processChunk(
-          
-          part.textDelta,
+          part.text,
           (data) => {
             content += data;
             updateFinalReport(content);
@@ -581,9 +572,8 @@ function useDeepResearch() {
             reasoning += data;
           }
         );
-      } else if ((part as any).type === "reasoning-delta") {
-        
-        reasoning += (part as any).textDelta;
+      } else if (part.type === "reasoning-delta") {
+        reasoning += part.text;
       }
     }
     if (reasoning) logger.log(reasoning);
