@@ -12,7 +12,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/Internal/Button";

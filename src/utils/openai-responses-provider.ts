@@ -44,7 +44,7 @@ interface ResponsesResponse {
   output: any[];
   output_text?: string;
   parallel_tool_calls?: boolean;
-  reasoning?: { effort?: "low" | "medium" | "high"; generate_summary?: boolean };
+  reasoningText?: { effort?: "low" | "medium" | "high"; generate_summary?: boolean };
   temperature?: number;
   tool_choice?: any;
   tools?: any[];
@@ -121,7 +121,7 @@ class OpenAIResponsesLanguageModel {
       | { type: "object-json"; schema: any; name?: string; description?: string }
       | { type: "object-tool"; tool: any };
     prompt: any[];
-    maxTokens?: number;
+    maxOutputTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -131,7 +131,7 @@ class OpenAIResponsesLanguageModel {
     responseFormat?: { type: "json" | "text" };
     seed?: number;
     abortSignal?: AbortSignal;
-    providerMetadata?: Record<string, Record<string, any>>;
+    providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
     text?: string;
     toolCalls?: any[];
@@ -153,7 +153,7 @@ class OpenAIResponsesLanguageModel {
       model: this.modelId,
       input,
       ...(systemMessage && { instructions: systemMessage.content }),
-      ...(options.maxTokens !== undefined && { max_output_tokens: options.maxTokens }),
+      ...(options.maxOutputTokens !== undefined && { max_output_tokens: options.maxOutputTokens }),
       ...(options.temperature !== undefined && { temperature: options.temperature }),
       ...(options.topP !== undefined && { top_p: options.topP }),
       ...(options.responseFormat?.type === "json" && { 
@@ -196,8 +196,8 @@ class OpenAIResponsesLanguageModel {
       text: outputText,
       finishReason: this.mapFinishReason(data.status, data.incomplete_details),
       usage: {
-        promptTokens: data.usage?.input_tokens || 0,
-        completionTokens: data.usage?.output_tokens || 0,
+        inputTokens: data.usage?.input_tokens || 0,
+        outputTokens: data.usage?.output_tokens || 0,
       },
       rawCall: {
         rawPrompt: input,
@@ -219,7 +219,7 @@ class OpenAIResponsesLanguageModel {
       | { type: "object-json"; schema: any; name?: string; description?: string }
       | { type: "object-tool"; tool: any };
     prompt: any[];
-    maxTokens?: number;
+    maxOutputTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -229,7 +229,7 @@ class OpenAIResponsesLanguageModel {
     responseFormat?: { type: "json" | "text" };
     seed?: number;
     abortSignal?: AbortSignal;
-    providerMetadata?: Record<string, Record<string, any>>;
+    providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
     stream: ReadableStream<any>;
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
@@ -247,7 +247,7 @@ class OpenAIResponsesLanguageModel {
       model: this.modelId,
       input,
       ...(systemMessage && { instructions: systemMessage.content }),
-      ...(options.maxTokens !== undefined && { max_output_tokens: options.maxTokens }),
+      ...(options.maxOutputTokens !== undefined && { max_output_tokens: options.maxOutputTokens }),
       ...(options.temperature !== undefined && { temperature: options.temperature }),
       ...(options.topP !== undefined && { top_p: options.topP }),
       stream: true,
@@ -317,8 +317,8 @@ class OpenAIResponsesLanguageModel {
                     type: "finish",
                     finishReason: "stop",
                     usage: {
-                      promptTokens: usage?.input_tokens || 0,
-                      completionTokens: usage?.output_tokens || 0,
+                      inputTokens: usage?.input_tokens || 0,
+                      outputTokens: usage?.output_tokens || 0,
                     },
                   });
                 } else if (event.output_text) {
@@ -337,7 +337,7 @@ class OpenAIResponsesLanguageModel {
           controller.enqueue({
             type: "finish",
             finishReason: "stop",
-            usage: { promptTokens: 0, completionTokens: 0 },
+            usage: { inputTokens: 0, outputTokens: 0 },
           });
           controller.close();
         } catch (error) {

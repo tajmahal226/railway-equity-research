@@ -278,8 +278,8 @@ export class CompanyDeepResearch {
     }
 
     const modelMaxTokens = getMaxTokens(providerId, modelId);
-    const requestedMaxTokens = settingsWithReasoning.maxTokens;
-    settingsWithReasoning.maxTokens = Math.min(
+    const requestedMaxTokens = settingsWithReasoning.maxOutputTokens;
+    settingsWithReasoning.maxOutputTokens = Math.min(
       requestedMaxTokens ?? modelMaxTokens,
       modelMaxTokens
     );
@@ -310,8 +310,8 @@ export class CompanyDeepResearch {
     }
 
     const modelMaxTokens = getMaxTokens(providerId, modelId);
-    const requestedMaxTokens = settingsWithReasoning.maxTokens;
-    settingsWithReasoning.maxTokens = Math.min(
+    const requestedMaxTokens = settingsWithReasoning.maxOutputTokens;
+    settingsWithReasoning.maxOutputTokens = Math.min(
       requestedMaxTokens ?? modelMaxTokens,
       modelMaxTokens
     );
@@ -601,7 +601,7 @@ ${Object.entries(INVESTMENT_RESEARCH_SECTIONS)
 
 Provide a brief rationale for which sections should be prioritized and any company-specific focus areas.`;
 
-      const taskSettings = this.getTaskModelSettings({ temperature: 0.3, maxTokens: 1000 });
+      const taskSettings = this.getTaskModelSettings({ temperature: 0.3, maxOutputTokens: 1000 });
       
       const { text: planRationale } = await generateText({
         model: this.taskModel,
@@ -832,7 +832,7 @@ Please synthesize these search results into key learnings relevant to the resear
 Focus on factual information that would be valuable for an investment analyst.
 Be specific and include data points, dates, and concrete details when available.`;
 
-        const learningTaskSettings = this.getTaskModelSettings({ temperature: 0.3, maxTokens: 1000 });
+        const learningTaskSettings = this.getTaskModelSettings({ temperature: 0.3, maxOutputTokens: 1000 });
         
         const { text: learning } = await generateText({
           model: this.taskModel,
@@ -894,7 +894,7 @@ Be specific and include data points, dates, and concrete details when available.
       });
       
       // Use generateText for fast, non-streaming response
-      const fastTaskSettings = this.getTaskModelSettings({ temperature: 0.7, maxTokens: 4000 });
+      const fastTaskSettings = this.getTaskModelSettings({ temperature: 0.7, maxOutputTokens: 4000 });
       
       const { text } = await generateText({
         model: this.taskModel,
@@ -972,7 +972,7 @@ Keep the analysis concise but insightful, focusing on the most important investm
       });
       
       // Use streamText for medium report
-      const mediumThinkingSettings = this.getThinkingModelSettings({ temperature: 0.5, maxTokens: 5000 });
+      const mediumThinkingSettings = this.getThinkingModelSettings({ temperature: 0.5, maxOutputTokens: 5000 });
       
       const result = streamText({
         model: this.thinkingModel,
@@ -1084,7 +1084,7 @@ IMPORTANT: Create a thorough, professional investment analysis that would prepar
       });
       
       // Use streamText for real-time updates
-      const thinkingSettings = this.getThinkingModelSettings({ temperature: 0.5, maxTokens: 8000 });
+      const thinkingSettings = this.getThinkingModelSettings({ temperature: 0.5, maxOutputTokens: 8000 });
       
       const result = streamText({
         model: this.thinkingModel,

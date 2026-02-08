@@ -1,4 +1,4 @@
-import { z, ZodTypeAny } from "zod";
+import { z, ZodTypeAny } from 'zod/v3';
 
 export const LATEST_PROTOCOL_VERSION = "2025-03-26";
 export const SUPPORTED_PROTOCOL_VERSIONS = [
@@ -1092,7 +1092,7 @@ export const CreateMessageRequestSchema = RequestSchema.extend({
     /**
      * The maximum number of tokens to sample, as requested by the server. The client MAY choose to sample fewer tokens than requested.
      */
-    maxTokens: z.number().int(),
+    maxOutputTokens: z.number().int(),
     stopSequences: z.optional(z.array(z.string())),
     /**
      * Optional metadata to pass through to the LLM provider. The format of this metadata is provider-specific.

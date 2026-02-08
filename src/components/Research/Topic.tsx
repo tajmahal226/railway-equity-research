@@ -12,7 +12,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { zodResolver } from "@hookform/resolvers/zod";
 import ResourceList from "@/components/Knowledge/ResourceList";
 import Crawler from "@/components/Knowledge/Crawler";

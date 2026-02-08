@@ -60,7 +60,7 @@ class OpenAILanguageModel {
       | { type: "object-json"; schema: any; name?: string; description?: string }
       | { type: "object-tool"; tool: any };
     prompt: any[];
-    maxTokens?: number;
+    maxOutputTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -70,7 +70,7 @@ class OpenAILanguageModel {
     responseFormat?: { type: "json" | "text" };
     seed?: number;
     abortSignal?: AbortSignal;
-    providerMetadata?: Record<string, Record<string, any>>;
+    providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
     text?: string;
     toolCalls?: any[];
@@ -90,7 +90,7 @@ class OpenAILanguageModel {
       body = {
         model: this.modelId,
         input: messages,
-        ...(options.maxTokens !== undefined && { max_output_tokens: options.maxTokens }),
+        ...(options.maxOutputTokens !== undefined && { max_output_tokens: options.maxOutputTokens }),
         ...(options.temperature !== undefined && { temperature: options.temperature }),
         ...(options.topP !== undefined && { top_p: options.topP }),
         ...(options.stopSequences !== undefined && { stop: options.stopSequences }),
@@ -99,7 +99,7 @@ class OpenAILanguageModel {
       body = {
         model: this.modelId,
         messages,
-        ...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
+        ...(options.maxOutputTokens !== undefined && { max_tokens: options.maxOutputTokens }),
         ...(options.temperature !== undefined && { temperature: options.temperature }),
         ...(options.topP !== undefined && { top_p: options.topP }),
         ...(options.stopSequences !== undefined && { stop: options.stopSequences }),
@@ -132,8 +132,8 @@ class OpenAILanguageModel {
         text: outputText,
         finishReason: this.mapFinishReason(data.incomplete?.reason || "stop"),
         usage: {
-          promptTokens: data.usage?.input_tokens || 0,
-          completionTokens: data.usage?.output_tokens || 0,
+          inputTokens: data.usage?.input_tokens || 0,
+          outputTokens: data.usage?.output_tokens || 0,
         },
         rawCall: {
           rawPrompt: messages,
@@ -155,8 +155,8 @@ class OpenAILanguageModel {
       text: choice?.message?.content || "",
       finishReason: this.mapFinishReason(choice?.finish_reason),
       usage: {
-        promptTokens: data.usage?.prompt_tokens || 0,
-        completionTokens: data.usage?.completion_tokens || 0,
+        inputTokens: data.usage?.prompt_tokens || 0,
+        outputTokens: data.usage?.completion_tokens || 0,
       },
       rawCall: {
         rawPrompt: messages,
@@ -178,7 +178,7 @@ class OpenAILanguageModel {
       | { type: "object-json"; schema: any; name?: string; description?: string }
       | { type: "object-tool"; tool: any };
     prompt: any[];
-    maxTokens?: number;
+    maxOutputTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -188,7 +188,7 @@ class OpenAILanguageModel {
     responseFormat?: { type: "json" | "text" };
     seed?: number;
     abortSignal?: AbortSignal;
-    providerMetadata?: Record<string, Record<string, any>>;
+    providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
     stream: ReadableStream<any>;
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
@@ -205,7 +205,7 @@ class OpenAILanguageModel {
         model: this.modelId,
         input: messages,
         stream: true,
-        ...(options.maxTokens !== undefined && { max_output_tokens: options.maxTokens }),
+        ...(options.maxOutputTokens !== undefined && { max_output_tokens: options.maxOutputTokens }),
         ...(options.temperature !== undefined && { temperature: options.temperature }),
       };
     } else {
@@ -213,7 +213,7 @@ class OpenAILanguageModel {
         model: this.modelId,
         messages,
         stream: true,
-        ...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
+        ...(options.maxOutputTokens !== undefined && { max_tokens: options.maxOutputTokens }),
         ...(options.temperature !== undefined && { temperature: options.temperature }),
         ...(options.topP !== undefined && { top_p: options.topP }),
         ...(options.stopSequences !== undefined && { stop: options.stopSequences }),
@@ -298,8 +298,8 @@ class OpenAILanguageModel {
                     type: "finish",
                     finishReason: "stop",
                     usage: {
-                      promptTokens: chunk.usage.prompt_tokens || chunk.usage.input_tokens || 0,
-                      completionTokens: chunk.usage.completion_tokens || chunk.usage.output_tokens || 0,
+                      inputTokens: chunk.usage.prompt_tokens || chunk.usage.input_tokens || 0,
+                      outputTokens: chunk.usage.completion_tokens || chunk.usage.output_tokens || 0,
                     },
                   });
                 }
@@ -312,7 +312,7 @@ class OpenAILanguageModel {
           controller.enqueue({
             type: "finish",
             finishReason: "stop",
-            usage: { promptTokens: 0, completionTokens: 0 },
+            usage: { inputTokens: 0, outputTokens: 0 },
           });
           controller.close();
         } catch (error) {

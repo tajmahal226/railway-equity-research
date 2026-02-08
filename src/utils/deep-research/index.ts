@@ -95,7 +95,7 @@ class DeepResearch {
     }
     const maxTokens = getMaxTokens(AIProvider.provider, AIProvider.thinkingModel);
     if (maxTokens !== undefined) {
-      settings = { ...(settings || {}), maxTokens };
+      settings = { ...(settings || {}), maxOutputTokens };
     }
     const filteredSettings = filterModelSettings(
       AIProvider.provider,
@@ -133,7 +133,7 @@ class DeepResearch {
     }
     const maxTokens = getMaxTokens(AIProvider.provider, AIProvider.taskModel);
     if (maxTokens !== undefined) {
-      settings.maxTokens = maxTokens;
+      settings.maxOutputTokens = maxTokens;
     }
 
     const filteredSettings = filterModelSettings(
@@ -364,8 +364,8 @@ class DeepResearch {
         } else if (p.type === "source") {
           sources.push(p.source);
         } else if (p.type === "finish") {
-          if (p.providerMetadata?.google) {
-            const { groundingMetadata } = p.providerMetadata.google;
+          if (p.providerOptions?.google) {
+            const { groundingMetadata } = p.providerOptions.google;
             const googleGroundingMetadata =
               groundingMetadata as GoogleGenerativeAIProviderMetadata["groundingMetadata"];
             if (googleGroundingMetadata?.groundingSupports) {
@@ -383,7 +383,7 @@ class DeepResearch {
                 }
               );
             }
-          } else if (p.providerMetadata?.openai) {
+          } else if (p.providerOptions?.openai) {
             // Fixed the problem that OpenAI cannot generate markdown reference link syntax properly in Chinese context
             content = content.replaceAll("【", "[").replaceAll("】", "]");
           }

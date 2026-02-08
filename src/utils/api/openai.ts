@@ -13,8 +13,7 @@ export class OpenAIProvider implements Provider {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     this.openai = createOpenAI({
-      apiKey,
-      compatibility: "strict",
+      apiKey
     });
   }
 
@@ -27,7 +26,7 @@ export class OpenAIProvider implements Provider {
             prompt,
             temperature: options.temperature,
             
-            maxTokens: options.maxTokens,
+            maxOutputTokens: options.maxOutputTokens,
             abortSignal: options.signal,
           }),
           options.timeout || 60000
@@ -47,7 +46,7 @@ export class OpenAIProvider implements Provider {
         prompt,
         temperature: options.temperature,
         
-        maxTokens: options.maxTokens,
+        maxOutputTokens: options.maxOutputTokens,
         abortSignal: options.signal,
       });
 

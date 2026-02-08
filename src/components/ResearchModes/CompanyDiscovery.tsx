@@ -154,7 +154,7 @@ export default function CompanyDiscovery() {
                 priceChangePercent: result.changePercent,
                 tags: [result.sector, "Public Company", "Financial Data Available"],
                 matchScore: 100 - index, // Deterministic relevance score based on position
-                reasoning: `Found through financial database search. Market cap: ${result.marketCap}, Current price: $${result.price}`,
+                reasoningText: `Found through financial database search. Market cap: ${result.marketCap}, Current price: $${result.price}`,
                 sources: ["Financial API", "Company Profile Database"],
                 competitors: [],
                 foundedYear: profile?.founded,
@@ -785,7 +785,6 @@ export default function CompanyDiscovery() {
           )}
         </CardContent>
       </Card>
-
       {/* Save Search Dialog */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent>
@@ -826,7 +825,6 @@ export default function CompanyDiscovery() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Company Details Dialog */}
       <Dialog open={showCompanyDialog} onOpenChange={setShowCompanyDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -980,7 +978,7 @@ export default function CompanyDiscovery() {
               )}
 
               {/* Match Analysis */}
-              {selectedCompany.reasoning && (
+              {selectedCompany.reasoningText && (
                 <div>
                   <h4 className="font-semibold mb-3">Match Analysis</h4>
                   <div className="bg-muted p-4 rounded-lg">
@@ -990,7 +988,7 @@ export default function CompanyDiscovery() {
                         Match Score: {selectedCompany.matchScore}%
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{selectedCompany.reasoning}</p>
+                    <p className="text-sm text-muted-foreground">{selectedCompany.reasoningText}</p>
                   </div>
                 </div>
               )}

@@ -29,14 +29,14 @@ describe('CompanyDeepResearch maxTokens handling', () => {
 
     const thinkingSettings = (researcher as any).getThinkingModelSettings({
       temperature: 0.5,
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     });
     const taskSettings = (researcher as any).getTaskModelSettings({
       temperature: 0.7,
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     });
 
-    expect(thinkingSettings.maxTokens).toBe(4000);
-    expect(taskSettings.maxTokens).toBe(4000);
+    expect(thinkingSettings.maxOutputTokens).toBe(4000);
+    expect(taskSettings.maxOutputTokens).toBe(4000);
   });
 });

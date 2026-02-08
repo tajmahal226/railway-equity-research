@@ -21,7 +21,7 @@ export interface CompanyResult {
   tags: string[];
   logo?: string;
   matchScore?: number;
-  reasoning?: string;
+  reasoningText?: string;
   sources: string[];
   discoveredAt: number;
   // Financial data fields

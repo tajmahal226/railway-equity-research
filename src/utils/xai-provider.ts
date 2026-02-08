@@ -45,7 +45,7 @@ class XAILanguageModel {
       | { type: "object-json"; schema: any; name?: string; description?: string }
       | { type: "object-tool"; tool: any };
     prompt: any[];
-    maxTokens?: number;
+    maxOutputTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -55,7 +55,7 @@ class XAILanguageModel {
     responseFormat?: { type: "json" | "text" };
     seed?: number;
     abortSignal?: AbortSignal;
-    providerMetadata?: Record<string, Record<string, any>>;
+    providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
     text?: string;
     toolCalls?: any[];
@@ -73,7 +73,7 @@ class XAILanguageModel {
       messages,
     };
     
-    if (options.maxTokens !== undefined) body.max_tokens = options.maxTokens;
+    if (options.maxOutputTokens !== undefined) body.max_tokens = options.maxOutputTokens;
     if (options.temperature !== undefined) body.temperature = options.temperature;
     if (options.topP !== undefined) body.top_p = options.topP;
     if (options.stopSequences !== undefined) body.stop = options.stopSequences;
@@ -98,8 +98,8 @@ class XAILanguageModel {
       text: choice?.message?.content || "",
       finishReason: this.mapFinishReason(choice?.finish_reason),
       usage: {
-        promptTokens: data.usage?.prompt_tokens || 0,
-        completionTokens: data.usage?.completion_tokens || 0,
+        inputTokens: data.usage?.prompt_tokens || 0,
+        outputTokens: data.usage?.completion_tokens || 0,
       },
       rawCall: {
         rawPrompt: messages,
@@ -121,7 +121,7 @@ class XAILanguageModel {
       | { type: "object-json"; schema: any; name?: string; description?: string }
       | { type: "object-tool"; tool: any };
     prompt: any[];
-    maxTokens?: number;
+    maxOutputTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -131,7 +131,7 @@ class XAILanguageModel {
     responseFormat?: { type: "json" | "text" };
     seed?: number;
     abortSignal?: AbortSignal;
-    providerMetadata?: Record<string, Record<string, any>>;
+    providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
     stream: ReadableStream<any>;
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
@@ -146,7 +146,7 @@ class XAILanguageModel {
       stream: true,
     };
     
-    if (options.maxTokens !== undefined) body.max_tokens = options.maxTokens;
+    if (options.maxOutputTokens !== undefined) body.max_tokens = options.maxOutputTokens;
     if (options.temperature !== undefined) body.temperature = options.temperature;
     if (options.topP !== undefined) body.top_p = options.topP;
     if (options.stopSequences !== undefined) body.stop = options.stopSequences;
@@ -214,8 +214,8 @@ class XAILanguageModel {
                     type: "finish",
                     finishReason: "stop",
                     usage: {
-                      promptTokens: chunk.usage.prompt_tokens || 0,
-                      completionTokens: chunk.usage.completion_tokens || 0,
+                      inputTokens: chunk.usage.prompt_tokens || 0,
+                      outputTokens: chunk.usage.completion_tokens || 0,
                     },
                   });
                 }
@@ -228,7 +228,7 @@ class XAILanguageModel {
           controller.enqueue({
             type: "finish",
             finishReason: "stop",
-            usage: { promptTokens: 0, completionTokens: 0 },
+            usage: { inputTokens: 0, outputTokens: 0 },
           });
           controller.close();
         } catch (error) {

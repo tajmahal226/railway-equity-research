@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { McpServer } from "@/libs/mcp-server/mcp";
 import DeepResearch from "@/utils/deep-research";
 import { multiApiKeyPolling } from "@/utils/model";

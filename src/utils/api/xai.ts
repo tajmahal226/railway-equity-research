@@ -29,7 +29,7 @@ export class XaiProvider implements Provider {
             model,
             prompt,
             temperature: options.temperature,
-            maxTokens: options.maxTokens,
+            maxOutputTokens: options.maxOutputTokens,
           }),
           options.timeout
         )
@@ -48,7 +48,7 @@ export class XaiProvider implements Provider {
         model,
         prompt,
         temperature: options.temperature,
-        maxTokens: options.maxTokens,
+        maxOutputTokens: options.maxOutputTokens,
       });
 
       return result.textStream;

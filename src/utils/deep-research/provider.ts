@@ -99,8 +99,7 @@ export async function createAIProvider({
 
       // Use standard Chat Completions API for other models
       const openai = createOpenAI({
-        ...commonOptions,
-        compatibility: "compatible",
+        ...commonOptions
       });
       return openai(normalizedModel, settings) as unknown as LanguageModel;
     }
@@ -156,24 +155,21 @@ export async function createAIProvider({
     case "perplexity": {
       // These providers use OpenAI-compatible APIs
       const openaiCompatible = createOpenAI({
-        ...commonOptions,
-        compatibility: "compatible",
+        ...commonOptions
       });
       return openaiCompatible(model, settings) as unknown as LanguageModel;
     }
 
     case "groq": {
       const groq = createOpenAI({
-        ...commonOptions,
-        compatibility: "compatible",
+        ...commonOptions
       });
       return groq(model, settings) as unknown as LanguageModel;
     }
 
     case "cohere": {
       const cohere = createOpenAI({
-        ...commonOptions,
-        compatibility: "compatible",
+        ...commonOptions
       });
       return cohere(model, settings) as unknown as LanguageModel;
     }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { streamText, smoothStream, type JSONValue, type Tool } from "ai";
-import { parsePartialJson } from "@ai-sdk/ui-utils";
+import { parsePartialJson } from 'ai';
 import { openai } from "@ai-sdk/openai";
 import { type GoogleGenerativeAIProviderMetadata } from "@ai-sdk/google";
 import { useTranslation } from "react-i18next";
@@ -384,9 +384,9 @@ function useDeepResearch() {
                 sources.push(part.source);
               } else if (part.type === "finish") {
                 
-                if (part.providerMetadata?.google) {
+                if (part.providerOptions?.google) {
                   
-                  const { groundingMetadata } = part.providerMetadata.google;
+                  const { groundingMetadata } = part.providerOptions.google;
                   const googleGroundingMetadata =
                     groundingMetadata as GoogleGenerativeAIProviderMetadata["groundingMetadata"];
                   if (googleGroundingMetadata?.groundingSupports) {
@@ -405,7 +405,7 @@ function useDeepResearch() {
                     );
                   }
                   
-                } else if (part.providerMetadata?.openai) {
+                } else if (part.providerOptions?.openai) {
                   // Fixed the problem that OpenAI cannot generate markdown reference link syntax properly in Chinese context
                   content = content.replaceAll("【", "[").replaceAll("】", "]");
                 }
