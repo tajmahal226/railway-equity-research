@@ -60,7 +60,7 @@ class XAILanguageModel {
     text?: string;
     toolCalls?: any[];
     finishReason: "stop" | "length" | "other" | "error" | "unknown";
-    usage: { promptTokens: number; completionTokens: number };
+    usage: { inputTokens: number; outputTokens: number };
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
     rawResponse?: { headers?: Record<string, string> };
     response?: { id?: string; timestamp?: Date; modelId?: string };

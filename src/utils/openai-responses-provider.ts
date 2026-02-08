@@ -44,7 +44,7 @@ interface ResponsesResponse {
   output: any[];
   output_text?: string;
   parallel_tool_calls?: boolean;
-  reasoningText?: { effort?: "low" | "medium" | "high"; generate_summary?: boolean };
+  reasoning?: { effort?: "low" | "medium" | "high"; generate_summary?: boolean };
   temperature?: number;
   tool_choice?: any;
   tools?: any[];
@@ -136,7 +136,7 @@ class OpenAIResponsesLanguageModel {
     text?: string;
     toolCalls?: any[];
     finishReason: "stop" | "length" | "other" | "error" | "unknown";
-    usage: { promptTokens: number; completionTokens: number };
+    usage: { inputTokens: number; outputTokens: number };
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
     rawResponse?: { headers?: Record<string, string> };
     response?: { id?: string; timestamp?: Date; modelId?: string };

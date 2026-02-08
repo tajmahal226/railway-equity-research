@@ -95,7 +95,7 @@ class DeepResearch {
     }
     const maxTokens = getMaxTokens(AIProvider.provider, AIProvider.thinkingModel);
     if (maxTokens !== undefined) {
-      settings = { ...(settings || {}), maxOutputTokens };
+      settings = { ...(settings || {}), maxOutputTokens: maxTokens };
     }
     const filteredSettings = filterModelSettings(
       AIProvider.provider,
