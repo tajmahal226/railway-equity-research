@@ -1,4 +1,4 @@
-import { LanguageModelV3StreamPart } from '@ai-sdk/provider';
+import { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
 interface XAIProviderOptions {
   baseURL?: string;
@@ -12,10 +12,10 @@ interface XAIConfig {
   headers?: Record<string, string>;
 }
 
-// xAI provider that implements LanguageModelV3 interface directly
+// xAI provider that implements LanguageModelV2 interface directly
 // This bypasses AI SDK 5 validation issues with the official @ai-sdk/xai package
 class XAILanguageModel {
-  readonly specificationVersion = "v3" as const;
+  readonly specificationVersion = "v2" as const;
   readonly modelId: string;
   readonly provider = "xai";
   readonly defaultObjectGenerationMode = "json";
@@ -126,7 +126,7 @@ class XAILanguageModel {
     abortSignal?: AbortSignal;
     providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
-    stream: ReadableStream<LanguageModelV3StreamPart>;
+    stream: ReadableStream<LanguageModelV2StreamPart>;
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
     rawResponse?: { headers?: Record<string, string> };
     warnings?: any[];
@@ -167,7 +167,7 @@ class XAILanguageModel {
     };
   }
 
-  private createStream(response: Response): ReadableStream<LanguageModelV3StreamPart> {
+  private createStream(response: Response): ReadableStream<LanguageModelV2StreamPart> {
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -201,14 +201,14 @@ class XAILanguageModel {
                     controller.enqueue({
                       type: "text-start",
                       id: textId,
-                    } as LanguageModelV3StreamPart);
+                    } as LanguageModelV2StreamPart);
                   }
 
                   controller.enqueue({
                     type: "text-delta",
                     id: textId,
                     delta: delta.content,
-                  } as LanguageModelV3StreamPart);
+                  } as LanguageModelV2StreamPart);
                 }
 
                 if (chunk.usage) {
@@ -216,7 +216,7 @@ class XAILanguageModel {
                     controller.enqueue({
                       type: "text-end",
                       id: textId,
-                    } as LanguageModelV3StreamPart);
+                    } as LanguageModelV2StreamPart);
                   }
 
                   controller.enqueue({
@@ -226,7 +226,7 @@ class XAILanguageModel {
                       outputTokens: chunk.usage.completion_tokens || 0,
                     },
                     finishReason: "stop",
-                  } as LanguageModelV3StreamPart);
+                  } as LanguageModelV2StreamPart);
                 }
               } catch {
                 // Skip invalid JSON
@@ -238,14 +238,14 @@ class XAILanguageModel {
             controller.enqueue({
               type: "text-end",
               id: textId,
-            } as LanguageModelV3StreamPart);
+            } as LanguageModelV2StreamPart);
           }
 
           controller.enqueue({
             type: "finish",
             usage: { inputTokens: 0, outputTokens: 0 },
             finishReason: "stop",
-          } as LanguageModelV3StreamPart);
+          } as LanguageModelV2StreamPart);
           controller.close();
         } catch (error) {
           controller.error(error);
