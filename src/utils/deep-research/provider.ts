@@ -116,7 +116,8 @@ export async function createAIProvider({
 
     case "deepseek": {
       const deepseek = createDeepSeek(commonOptions);
-      return deepseek(model, settings) as unknown as LanguageModel;
+      // DeepSeek uses LanguageModelV2 which only takes modelId, not settings
+      return deepseek(model) as unknown as LanguageModel;
     }
 
     case "mistral": {

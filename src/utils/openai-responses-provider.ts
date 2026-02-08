@@ -322,7 +322,7 @@ class OpenAIResponsesLanguageModel {
                     controller.enqueue({
                       type: "text-delta",
                       id: textId,
-                      textDelta: event.delta,
+                      delta: event.delta,
                     } as LanguageModelV2StreamPart);
                   }
                 } else if (event.type === "response.completed") {
@@ -356,7 +356,7 @@ class OpenAIResponsesLanguageModel {
                   controller.enqueue({
                     type: "text-delta",
                     id: textId,
-                    textDelta: event.output_text,
+                    delta: event.output_text,
                   } as LanguageModelV2StreamPart);
                 }
               } catch {
