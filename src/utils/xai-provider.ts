@@ -1,3 +1,5 @@
+import { LanguageModelV3StreamPart } from '@ai-sdk/provider';
+
 interface XAIProviderOptions {
   baseURL?: string;
   apiKey?: string;
@@ -10,10 +12,10 @@ interface XAIConfig {
   headers?: Record<string, string>;
 }
 
-// xAI provider that implements LanguageModelV1 interface directly
+// xAI provider that implements LanguageModelV3 interface directly
 // This bypasses AI SDK 5 validation issues with the official @ai-sdk/xai package
 class XAILanguageModel {
-  readonly specificationVersion = "v1" as const;
+  readonly specificationVersion = "v3" as const;
   readonly modelId: string;
   readonly provider = "xai";
   readonly defaultObjectGenerationMode = "json";
@@ -39,13 +41,9 @@ class XAILanguageModel {
   }
 
   async doGenerate(options: {
-    inputFormat?: "prompt" | "messages";
-    mode?:
-      | { type: "regular"; tools?: any[]; toolChoice?: any }
-      | { type: "object-json"; schema: any; name?: string; description?: string }
-      | { type: "object-tool"; tool: any };
-    prompt: any[];
-    maxOutputTokens?: number;
+    mode: "regular" | { type: "object-json"; schema: any } | { type: "object-tool"; tool: any };
+    messages: any[];
+    maxTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -65,15 +63,14 @@ class XAILanguageModel {
     rawResponse?: { headers?: Record<string, string> };
     response?: { id?: string; timestamp?: Date; modelId?: string };
     warnings?: any[];
-    request?: { body?: string };
   }> {
-    const messages = this.convertPromptToMessages(options.prompt);
+    const messages = options.messages;
     const body: any = {
       model: this.modelId,
       messages,
     };
-    
-    if (options.maxOutputTokens !== undefined) body.max_tokens = options.maxOutputTokens;
+
+    if (options.maxTokens !== undefined) body.max_tokens = options.maxTokens;
     if (options.temperature !== undefined) body.temperature = options.temperature;
     if (options.topP !== undefined) body.top_p = options.topP;
     if (options.stopSequences !== undefined) body.stop = options.stopSequences;
@@ -115,13 +112,9 @@ class XAILanguageModel {
   }
 
   async doStream(options: {
-    inputFormat?: "prompt" | "messages";
-    mode?:
-      | { type: "regular"; tools?: any[]; toolChoice?: any }
-      | { type: "object-json"; schema: any; name?: string; description?: string }
-      | { type: "object-tool"; tool: any };
-    prompt: any[];
-    maxOutputTokens?: number;
+    mode: "regular" | { type: "object-json"; schema: any } | { type: "object-tool"; tool: any };
+    messages: any[];
+    maxTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -133,20 +126,19 @@ class XAILanguageModel {
     abortSignal?: AbortSignal;
     providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
-    stream: ReadableStream<any>;
+    stream: ReadableStream<LanguageModelV3StreamPart>;
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
     rawResponse?: { headers?: Record<string, string> };
     warnings?: any[];
-    request?: { body?: string };
   }> {
-    const messages = this.convertPromptToMessages(options.prompt);
+    const messages = options.messages;
     const body: any = {
       model: this.modelId,
       messages,
       stream: true,
     };
-    
-    if (options.maxOutputTokens !== undefined) body.max_tokens = options.maxOutputTokens;
+
+    if (options.maxTokens !== undefined) body.max_tokens = options.maxTokens;
     if (options.temperature !== undefined) body.temperature = options.temperature;
     if (options.topP !== undefined) body.top_p = options.topP;
     if (options.stopSequences !== undefined) body.stop = options.stopSequences;
@@ -175,10 +167,11 @@ class XAILanguageModel {
     };
   }
 
-  private createStream(response: Response): ReadableStream<any> {
+  private createStream(response: Response): ReadableStream<LanguageModelV3StreamPart> {
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    let textId = "";
 
     return new ReadableStream({
       start: async (controller) => {
@@ -203,21 +196,37 @@ class XAILanguageModel {
                 const delta = chunk.choices?.[0]?.delta;
 
                 if (delta?.content) {
+                  if (!textId) {
+                    textId = `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    controller.enqueue({
+                      type: "text-start",
+                      id: textId,
+                    } as LanguageModelV3StreamPart);
+                  }
+
                   controller.enqueue({
                     type: "text-delta",
-                    textDelta: delta.content,
-                  });
+                    id: textId,
+                    delta: delta.content,
+                  } as LanguageModelV3StreamPart);
                 }
 
                 if (chunk.usage) {
+                  if (textId) {
+                    controller.enqueue({
+                      type: "text-end",
+                      id: textId,
+                    } as LanguageModelV3StreamPart);
+                  }
+
                   controller.enqueue({
                     type: "finish",
-                    finishReason: "stop",
                     usage: {
                       inputTokens: chunk.usage.prompt_tokens || 0,
                       outputTokens: chunk.usage.completion_tokens || 0,
                     },
-                  });
+                    finishReason: "stop",
+                  } as LanguageModelV3StreamPart);
                 }
               } catch {
                 // Skip invalid JSON
@@ -225,41 +234,23 @@ class XAILanguageModel {
             }
           }
 
+          if (textId) {
+            controller.enqueue({
+              type: "text-end",
+              id: textId,
+            } as LanguageModelV3StreamPart);
+          }
+
           controller.enqueue({
             type: "finish",
-            finishReason: "stop",
             usage: { inputTokens: 0, outputTokens: 0 },
-          });
+            finishReason: "stop",
+          } as LanguageModelV3StreamPart);
           controller.close();
         } catch (error) {
           controller.error(error);
         }
       },
-    });
-  }
-
-  private convertPromptToMessages(prompt: any[]): any[] {
-    // Convert AI SDK prompt format to xAI/OpenAI format
-    return prompt.map((p) => {
-      if (p.role === "user") {
-        return {
-          role: "user",
-          content: typeof p.content === "string" ? p.content : JSON.stringify(p.content),
-        };
-      }
-      if (p.role === "assistant") {
-        return {
-          role: "assistant",
-          content: typeof p.content === "string" ? p.content : JSON.stringify(p.content),
-        };
-      }
-      if (p.role === "system") {
-        return {
-          role: "system",
-          content: typeof p.content === "string" ? p.content : JSON.stringify(p.content),
-        };
-      }
-      return p;
     });
   }
 
