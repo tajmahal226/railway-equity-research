@@ -376,31 +376,16 @@ function useDeepResearch() {
               } else if (part.type === "reasoning-delta") {
                 reasoning += part.text;
               } else if (part.type === "source") {
-                sources.push(part.source);
-              } else if (part.type === "finish") {
-                if (part.providerOptions?.google) {
-                  const { groundingMetadata } = part.providerOptions.google;
-                  const googleGroundingMetadata =
-                    groundingMetadata as GoogleGenerativeAIProviderMetadata["groundingMetadata"];
-                  if (googleGroundingMetadata?.groundingSupports) {
-                    googleGroundingMetadata.groundingSupports.forEach(
-                      ({ segment, groundingChunkIndices }) => {
-                        if (segment.text && groundingChunkIndices) {
-                          const index = groundingChunkIndices.map(
-                            (idx: number) => `[${idx + 1}]`
-                          );
-                          content = content.replaceAll(
-                            segment.text,
-                            `${segment.text}${index.join("")}`
-                          );
-                        }
-                      }
-                    );
-                  }
-                } else if (part.providerOptions?.openai) {
-                  // Fixed the problem that OpenAI cannot generate markdown reference link syntax properly in Chinese context
-                  content = content.replaceAll("【", "[").replaceAll("】", "]");
+                // V2 source parts - extract URL from source structure
+                if (part.sourceType === "url" && part.url) {
+                  sources.push({
+                    url: part.url,
+                    title: part.title,
+                  });
                 }
+              } else if (part.type === "finish") {
+                // Provider-specific metadata handling moved to result processing
+                // V2 finish parts have different metadata structure
               }
             }
             if (reasoning) logger.log(reasoning);
@@ -476,20 +461,22 @@ function useDeepResearch() {
     for await (const textPart of result.textStream) {
       thinkTagStreamProcessor.processChunk(
         textPart,
-        (text) => {
+        async (text) => {
           content += text;
-          const data: PartialJson = parsePartialJson(
+          const data = await parsePartialJson(
             removeJsonMarkdown(content)
           );
           if (
             querySchema.safeParse(data.value) &&
             data.state === "successful-parse"
           ) {
-            if (data.value) {
-              queries = data.value.map(
-                (item: { query: string; researchGoal: string }) => ({
-                  state: "unprocessed",
+            if (data.value && Array.isArray(data.value)) {
+              queries = (data.value as Array<{ query: string; researchGoal: string }>).map(
+                (item) => ({
+                  state: "unprocessed" as const,
                   learning: "",
+                  sources: [],
+                  images: [],
                   ...pick(item, ["query", "researchGoal"]),
                 })
               );
@@ -630,9 +617,9 @@ function useDeepResearch() {
       for await (const textPart of result.textStream) {
         thinkTagStreamProcessor.processChunk(
           textPart,
-          (text) => {
+          async (text) => {
             content += text;
-            const data: PartialJson = parsePartialJson(
+            const data = await parsePartialJson(
               removeJsonMarkdown(content)
             );
             if (querySchema.safeParse(data.value)) {
@@ -640,11 +627,13 @@ function useDeepResearch() {
                 data.state === "repaired-parse" ||
                 data.state === "successful-parse"
               ) {
-                if (data.value) {
-                  queries = data.value.map(
-                    (item: { query: string; researchGoal: string }) => ({
-                      state: "unprocessed",
+                if (data.value && Array.isArray(data.value)) {
+                  queries = (data.value as Array<{ query: string; researchGoal: string }>).map(
+                    (item) => ({
+                      state: "unprocessed" as const,
                       learning: "",
+                      sources: [],
+                      images: [],
                       ...pick(item, ["query", "researchGoal"]),
                     })
                   );

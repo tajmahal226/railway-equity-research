@@ -9,7 +9,7 @@ import {
   ZodType,
   ZodTypeDef,
   ZodOptional,
-} from 'zod/v3';
+} from 'zod';
 import {
   Implementation,
   Tool,

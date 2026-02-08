@@ -1,4 +1,4 @@
-import { z } from 'zod/v3';
+import { z } from 'zod';
 import { McpServer } from "@/libs/mcp-server/mcp";
 import DeepResearch from "@/utils/deep-research";
 import { multiApiKeyPolling } from "@/utils/model";
@@ -759,13 +759,13 @@ export function initMcpServer() {
         // Apply domain filtering if specified
         if (includeDomains && includeDomains.length > 0) {
           filteredResults = filteredResults.filter(result =>
-            includeDomains.some(domain => result.url.includes(domain))
+            includeDomains.some((domain: string) => result.url.includes(domain))
           );
         }
 
         if (excludeDomains && excludeDomains.length > 0) {
           filteredResults = filteredResults.filter(result =>
-            !excludeDomains.some(domain => result.url.includes(domain))
+            !excludeDomains.some((domain: string) => result.url.includes(domain))
           );
         }
 

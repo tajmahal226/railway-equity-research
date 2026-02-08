@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { z } from 'zod/v3';
+import { z } from 'zod';
 import { logger } from "@/utils/logger";
 
 export const runtime = "edge";
@@ -500,7 +500,7 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request format", details: error.errors },
+        { error: "Invalid request format", details: error.issues },
         { status: 400 }
       );
     }

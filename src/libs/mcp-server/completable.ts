@@ -7,7 +7,7 @@ import {
   RawCreateParams,
   ZodErrorMap,
   ProcessedCreateParams,
-} from 'zod/v3';
+} from 'zod';
 
 export enum McpZodTypeKind {
   Completable = "McpCompletable",

@@ -1,4 +1,4 @@
-import { z, ZodTypeAny } from 'zod/v3';
+import { z, ZodTypeAny } from 'zod';
 
 export const LATEST_PROTOCOL_VERSION = "2025-03-26";
 export const SUPPORTED_PROTOCOL_VERSIONS = [

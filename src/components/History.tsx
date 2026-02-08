@@ -2,7 +2,7 @@
 import { useState, useMemo, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { TrashIcon, FileOutput, Download } from "lucide-react";
-import { z } from 'zod/v3';
+import { z } from 'zod';
 import { toast } from "sonner";
 import Fuse from "fuse.js";
 import dayjs from "dayjs";

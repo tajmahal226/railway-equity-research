@@ -1,4 +1,4 @@
-import { ZodLiteral, ZodObject, ZodType, z } from 'zod/v3';
+import { ZodLiteral, ZodObject, ZodType, z } from 'zod';
 import {
   CancelledNotificationSchema,
   ClientCapabilities,
