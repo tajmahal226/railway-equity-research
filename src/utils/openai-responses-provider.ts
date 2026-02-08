@@ -1,9 +1,13 @@
 /**
  * OpenAI Responses API Provider
- * 
+ *
  * This provider uses the OpenAI Responses API (v1/responses) instead of Chat Completions.
  * Required for models like GPT-5.2-pro, o1, o3, and other reasoning models.
+ *
+ * Migrated to AI SDK 5.0 LanguageModelV2 interface
  */
+
+import { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
 interface ResponsesProviderOptions {
   baseURL?: string;
@@ -61,7 +65,7 @@ interface ResponsesResponse {
 }
 
 class OpenAIResponsesLanguageModel {
-  readonly specificationVersion = "v1" as const;
+  readonly specificationVersion = "v2" as const;
   readonly modelId: string;
   readonly provider = "openai.responses";
   readonly defaultObjectGenerationMode = "json";
@@ -84,13 +88,13 @@ class OpenAIResponsesLanguageModel {
     return headers;
   }
 
-  private convertPromptToInput(prompt: any[]): any[] {
-    // Convert AI SDK prompt format to Responses API input format
-    return prompt.map((p) => {
+  private convertMessagesToInput(messages: any[]): any[] {
+    // Convert AI SDK v2 messages format to Responses API input format
+    return messages.map((p) => {
       if (p.role === "user") {
         return {
           role: "user",
-          content: typeof p.content === "string" 
+          content: typeof p.content === "string"
             ? [{ type: "input_text", text: p.content }]
             : p.content,
         };
@@ -115,13 +119,12 @@ class OpenAIResponsesLanguageModel {
   }
 
   async doGenerate(options: {
-    inputFormat?: "prompt" | "messages";
-    mode?:
-      | { type: "regular"; tools?: any[]; toolChoice?: any }
-      | { type: "object-json"; schema: any; name?: string; description?: string }
+    mode:
+      | "regular"
+      | { type: "object-json"; schema: any }
       | { type: "object-tool"; tool: any };
-    prompt: any[];
-    maxOutputTokens?: number;
+    messages: any[];
+    maxTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -144,20 +147,20 @@ class OpenAIResponsesLanguageModel {
     request?: { body?: string };
   }> {
     // Extract system message as instructions
-    const systemMessage = options.prompt.find((p: any) => p.role === "system");
-    const nonSystemPrompt = options.prompt.filter((p: any) => p.role !== "system");
-    
-    const input = this.convertPromptToInput(nonSystemPrompt);
-    
+    const systemMessage = options.messages.find((p: any) => p.role === "system");
+    const nonSystemMessages = options.messages.filter((p: any) => p.role !== "system");
+
+    const input = this.convertMessagesToInput(nonSystemMessages);
+
     const body: ResponsesRequest = {
       model: this.modelId,
       input,
       ...(systemMessage && { instructions: systemMessage.content }),
-      ...(options.maxOutputTokens !== undefined && { max_output_tokens: options.maxOutputTokens }),
+      ...(options.maxTokens !== undefined && { max_output_tokens: options.maxTokens }),
       ...(options.temperature !== undefined && { temperature: options.temperature }),
       ...(options.topP !== undefined && { top_p: options.topP }),
-      ...(options.responseFormat?.type === "json" && { 
-        text: { format: { type: "json_object" } } 
+      ...(options.responseFormat?.type === "json" && {
+        text: { format: { type: "json_object" } }
       }),
       stream: false,
     };
@@ -175,7 +178,7 @@ class OpenAIResponsesLanguageModel {
     }
 
     const data: ResponsesResponse = await response.json();
-    
+
     // Extract text from output
     let outputText = "";
     if (data.output_text) {
@@ -213,13 +216,12 @@ class OpenAIResponsesLanguageModel {
   }
 
   async doStream(options: {
-    inputFormat?: "prompt" | "messages";
-    mode?:
-      | { type: "regular"; tools?: any[]; toolChoice?: any }
-      | { type: "object-json"; schema: any; name?: string; description?: string }
+    mode:
+      | "regular"
+      | { type: "object-json"; schema: any }
       | { type: "object-tool"; tool: any };
-    prompt: any[];
-    maxOutputTokens?: number;
+    messages: any[];
+    maxTokens?: number;
     temperature?: number;
     topP?: number;
     topK?: number;
@@ -231,23 +233,23 @@ class OpenAIResponsesLanguageModel {
     abortSignal?: AbortSignal;
     providerOptions?: Record<string, Record<string, any>>;
   }): Promise<{
-    stream: ReadableStream<any>;
+    stream: ReadableStream<LanguageModelV2StreamPart>;
     rawCall: { rawPrompt: any; rawSettings: Record<string, unknown> };
     rawResponse?: { headers?: Record<string, string> };
     warnings?: any[];
     request?: { body?: string };
   }> {
     // Extract system message as instructions
-    const systemMessage = options.prompt.find((p: any) => p.role === "system");
-    const nonSystemPrompt = options.prompt.filter((p: any) => p.role !== "system");
-    
-    const input = this.convertPromptToInput(nonSystemPrompt);
-    
+    const systemMessage = options.messages.find((p: any) => p.role === "system");
+    const nonSystemMessages = options.messages.filter((p: any) => p.role !== "system");
+
+    const input = this.convertMessagesToInput(nonSystemMessages);
+
     const body: ResponsesRequest = {
       model: this.modelId,
       input,
       ...(systemMessage && { instructions: systemMessage.content }),
-      ...(options.maxOutputTokens !== undefined && { max_output_tokens: options.maxOutputTokens }),
+      ...(options.maxTokens !== undefined && { max_output_tokens: options.maxTokens }),
       ...(options.temperature !== undefined && { temperature: options.temperature }),
       ...(options.topP !== undefined && { top_p: options.topP }),
       stream: true,
@@ -277,10 +279,11 @@ class OpenAIResponsesLanguageModel {
     };
   }
 
-  private createStream(response: Response): ReadableStream<any> {
+  private createStream(response: Response): ReadableStream<LanguageModelV2StreamPart> {
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    let textId = ""; // Track text block ID for v2
 
     return new ReadableStream({
       start: async (controller) => {
@@ -302,16 +305,35 @@ class OpenAIResponsesLanguageModel {
 
               try {
                 const event = JSON.parse(data);
-                
-                // Handle different event types
+
+                // Handle different event types from Responses API
                 if (event.type === "response.output_text.delta") {
                   if (event.delta) {
+                    // Send text-start for new text block
+                    if (!textId) {
+                      textId = `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                      controller.enqueue({
+                        type: "text-start",
+                        id: textId,
+                      } as LanguageModelV2StreamPart);
+                    }
+
+                    // Send text-delta
                     controller.enqueue({
                       type: "text-delta",
+                      id: textId,
                       textDelta: event.delta,
-                    });
+                    } as LanguageModelV2StreamPart);
                   }
                 } else if (event.type === "response.completed") {
+                  // Send text-end before finish
+                  if (textId) {
+                    controller.enqueue({
+                      type: "text-end",
+                      id: textId,
+                    } as LanguageModelV2StreamPart);
+                  }
+
                   const usage = event.response?.usage;
                   controller.enqueue({
                     type: "finish",
@@ -320,13 +342,22 @@ class OpenAIResponsesLanguageModel {
                       inputTokens: usage?.input_tokens || 0,
                       outputTokens: usage?.output_tokens || 0,
                     },
-                  });
+                  } as LanguageModelV2StreamPart);
                 } else if (event.output_text) {
                   // Fallback for different response format
+                  if (!textId) {
+                    textId = `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    controller.enqueue({
+                      type: "text-start",
+                      id: textId,
+                    } as LanguageModelV2StreamPart);
+                  }
+
                   controller.enqueue({
                     type: "text-delta",
+                    id: textId,
                     textDelta: event.output_text,
-                  });
+                  } as LanguageModelV2StreamPart);
                 }
               } catch {
                 // Skip invalid JSON
@@ -334,11 +365,19 @@ class OpenAIResponsesLanguageModel {
             }
           }
 
+          // Ensure text-end is sent if stream ends unexpectedly
+          if (textId) {
+            controller.enqueue({
+              type: "text-end",
+              id: textId,
+            } as LanguageModelV2StreamPart);
+          }
+
           controller.enqueue({
             type: "finish",
             finishReason: "stop",
             usage: { inputTokens: 0, outputTokens: 0 },
-          });
+          } as LanguageModelV2StreamPart);
           controller.close();
         } catch (error) {
           controller.error(error);
