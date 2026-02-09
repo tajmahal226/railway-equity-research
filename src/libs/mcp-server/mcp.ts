@@ -4,10 +4,8 @@ import {
   ZodRawShape,
   ZodObject,
   ZodString,
-  AnyZodObject,
   ZodTypeAny,
   ZodType,
-  ZodTypeDef,
   ZodOptional,
 } from 'zod';
 import {
@@ -620,11 +618,14 @@ export class McpServer {
     }
 
     const field = prompt.argsSchema.shape[request.params.argument.name];
+    // NOTE: Completable feature disabled for Zod 4.x compatibility
+    // The Completable class would need significant rework to support Zod 4.x internals
     if (!(field instanceof Completable)) {
       return EMPTY_COMPLETION_RESULT;
     }
 
-    const def: CompletableDef<ZodString> = field._def;
+    // Type assertion needed due to Zod 4.x type changes
+    const def = field._def as CompletableDef<ZodString>;
     const suggestions = await def.complete(request.params.argument.value);
     return createCompletionResult(suggestions);
   }
@@ -1367,7 +1368,7 @@ export class ResourceTemplate {
 export type ToolCallback<Args extends undefined | ZodRawShape = undefined> =
   Args extends ZodRawShape
     ? (
-        args: z.objectOutputType<Args, ZodTypeAny>,
+        args: z.ZodObject<Args>["_input"],
         extra: RequestHandlerExtra<ServerRequest, ServerNotification>
       ) => CallToolResult | Promise<CallToolResult>
     : (
@@ -1376,8 +1377,8 @@ export type ToolCallback<Args extends undefined | ZodRawShape = undefined> =
 
 export type RegisteredTool = {
   description?: string;
-  inputSchema?: AnyZodObject;
-  outputSchema?: AnyZodObject;
+  inputSchema?: ZodTypeAny;
+  outputSchema?: ZodTypeAny;
   annotations?: ToolAnnotations;
   callback: ToolCallback<undefined | ZodRawShape>;
   enabled: boolean;

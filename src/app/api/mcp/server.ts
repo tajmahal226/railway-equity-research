@@ -497,7 +497,7 @@ export function initMcpServer() {
           statements: {},
         };
 
-        if (statements.includes("income")) {
+        if (statements?.includes("income")) {
           mockFinancials.statements.income = {
             revenue: Math.floor(Math.random() * 100000 + 10000) + "M",
             gross_profit: Math.floor(Math.random() * 50000 + 5000) + "M",
@@ -507,7 +507,7 @@ export function initMcpServer() {
           };
         }
 
-        if (statements.includes("balance")) {
+        if (statements?.includes("balance")) {
           mockFinancials.statements.balance = {
             total_assets: Math.floor(Math.random() * 200000 + 20000) + "M",
             total_liabilities: Math.floor(Math.random() * 100000 + 10000) + "M",
@@ -517,7 +517,7 @@ export function initMcpServer() {
           };
         }
 
-        if (statements.includes("cash_flow")) {
+        if (statements?.includes("cash_flow")) {
           mockFinancials.statements.cash_flow = {
             operating_cash_flow: Math.floor(Math.random() * 20000 + 2000) + "M",
             investing_cash_flow: -Math.floor(Math.random() * 10000 + 1000) + "M",
