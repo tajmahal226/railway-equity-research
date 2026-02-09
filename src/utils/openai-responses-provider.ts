@@ -96,7 +96,20 @@ class OpenAIResponsesLanguageModel {
           role: "user",
           content: typeof p.content === "string"
             ? [{ type: "input_text", text: p.content }]
-            : p.content,
+            : Array.isArray(p.content)
+              ? p.content.map((c: any) => {
+                  if (c.type === "text") {
+                    return { type: "input_text", text: c.text };
+                  }
+                  if (c.type === "image") {
+                    return {
+                      type: "input_image",
+                      image_url: c.image_url,
+                    };
+                  }
+                  return c;
+                })
+              : p.content,
         };
       }
       if (p.role === "assistant") {
@@ -104,7 +117,14 @@ class OpenAIResponsesLanguageModel {
           role: "assistant",
           content: typeof p.content === "string"
             ? [{ type: "output_text", text: p.content }]
-            : p.content,
+            : Array.isArray(p.content)
+              ? p.content.map((c: any) => {
+                  if (c.type === "text") {
+                    return { type: "output_text", text: c.text };
+                  }
+                  return c;
+                })
+              : p.content,
         };
       }
       if (p.role === "system") {
