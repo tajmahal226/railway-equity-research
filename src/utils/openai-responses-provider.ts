@@ -167,8 +167,9 @@ class OpenAIResponsesLanguageModel {
     request?: { body?: string };
   }> {
     // Extract system message as instructions
-    const systemMessage = options.messages.find((p: any) => p.role === "system");
-    const nonSystemMessages = options.messages.filter((p: any) => p.role !== "system");
+    const messages = options.messages || [];
+    const systemMessage = messages.find((p: any) => p.role === "system");
+    const nonSystemMessages = messages.filter((p: any) => p.role !== "system");
 
     const input = this.convertMessagesToInput(nonSystemMessages);
 
@@ -260,8 +261,9 @@ class OpenAIResponsesLanguageModel {
     request?: { body?: string };
   }> {
     // Extract system message as instructions
-    const systemMessage = options.messages.find((p: any) => p.role === "system");
-    const nonSystemMessages = options.messages.filter((p: any) => p.role !== "system");
+    const messages = options.messages || [];
+    const systemMessage = messages.find((p: any) => p.role === "system");
+    const nonSystemMessages = messages.filter((p: any) => p.role !== "system");
 
     const input = this.convertMessagesToInput(nonSystemMessages);
 
