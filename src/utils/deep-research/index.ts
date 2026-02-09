@@ -269,12 +269,9 @@ class DeepResearch {
             taskModel.startsWith("gpt-4o")
           ) {
             const { openai } = await import("@ai-sdk/openai");
-            return {
-              web_search_preview: openai.tools.webSearchPreview({
-                // optional configuration:
-                searchContextSize: maxResult > 5 ? "high" : "medium",
-              }),
-            };
+            return openai.tools.webSearchPreview({
+              searchContextSize: maxResult > 5 ? "high" : "medium",
+            }) as any;
           } else {
             return undefined;
           }

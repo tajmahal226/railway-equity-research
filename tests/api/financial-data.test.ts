@@ -43,6 +43,16 @@ describe('Financial data API', () => {
   });
 
   it('gets stock price', async () => {
+    // Clear environment variables to ensure mock data is used
+    const originalKeys = {
+      financialDatasets: process.env.FINANCIAL_DATASETS_API_KEY,
+      alphaVantage: process.env.ALPHA_VANTAGE_API_KEY,
+      yahooFinance: process.env.YAHOO_FINANCE_API_KEY,
+    };
+    delete process.env.FINANCIAL_DATASETS_API_KEY;
+    delete process.env.ALPHA_VANTAGE_API_KEY;
+    delete process.env.YAHOO_FINANCE_API_KEY;
+
     const fetchSpy = vi.fn();
     global.fetch = fetchSpy as any;
     const req = new Request('http://localhost/api/financial-data', {
@@ -54,6 +64,11 @@ describe('Financial data API', () => {
     expect(json.success).toBe(true);
     expect(json.data.ticker).toBe('AAPL');
     expect(fetchSpy).not.toHaveBeenCalled();
+
+    // Restore environment variables
+    if (originalKeys.financialDatasets) process.env.FINANCIAL_DATASETS_API_KEY = originalKeys.financialDatasets;
+    if (originalKeys.alphaVantage) process.env.ALPHA_VANTAGE_API_KEY = originalKeys.alphaVantage;
+    if (originalKeys.yahooFinance) process.env.YAHOO_FINANCE_API_KEY = originalKeys.yahooFinance;
   });
 
   it('returns consistent mock data when deterministic mode enabled', async () => {

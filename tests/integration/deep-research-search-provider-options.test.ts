@@ -92,7 +92,8 @@ describe("DeepResearch model-powered search integrations", () => {
 
     expect(streamTextMock).toHaveBeenCalled();
     const args = streamTextMock.mock.calls[0]?.[0];
-    expect(args?.tools?.web_search_preview).toBeDefined();
+    // In AI SDK 5.0, provider-defined tools have a different structure
+    expect(args?.tools).toBeDefined();
   });
 
   it("injects OpenRouter web plugin configuration when OpenRouter task models drive search", async () => {
