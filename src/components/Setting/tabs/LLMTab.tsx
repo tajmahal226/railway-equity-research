@@ -230,7 +230,6 @@ export default function LLMTab({
             value={field.value}
             onValueChange={(value) => {
               field.onChange(value);
-              updateSetting("advancedModelRouting", value);
 
               if (value === "disable") {
                 syncTaskModelValues();
