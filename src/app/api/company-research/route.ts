@@ -310,6 +310,12 @@ export async function POST(req: NextRequest) {
       if (error instanceof Error) {
         if (error.message.includes("timeout")) {
           errorMessage = `Research timed out. The model (${body.thinkingModelId || 'default'}) may be slower than expected. Try using 'fast' mode or a faster model.`;
+        } else if (
+          error.message.includes("AI_NoOutputGeneratedError") ||
+          error.message.includes("No output generated")
+        ) {
+          errorMessage =
+            "Model returned no text output. Try fast or medium depth, or switch thinking model/provider in Settings.";
         } else {
           errorMessage = error.message;
         }

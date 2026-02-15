@@ -36,6 +36,7 @@ import {
   OPENROUTER_BASE_URL,
   XAI_BASE_URL,
 } from "@/constants/urls";
+import { getProviderStateKey } from "@/utils/provider";
 import { cn } from "@/utils/style";
 
 import HelpTip from "../HelpTip";
@@ -73,6 +74,45 @@ export default function LLMTab({
   fetchModelList,
   renderModelItem,
 }: LLMTabProps) {
+  const isAdvancedModelRouting = form.watch("advancedModelRouting") === "enable";
+
+  const syncTaskModelValues = (): void => {
+    const providerThinkingToTaskFieldMap = [
+      ["thinkingModel", "networkingModel"],
+      ["openRouterThinkingModel", "openRouterNetworkingModel"],
+      ["openAIThinkingModel", "openAINetworkingModel"],
+      ["anthropicThinkingModel", "anthropicNetworkingModel"],
+      ["deepseekThinkingModel", "deepseekNetworkingModel"],
+      ["xAIThinkingModel", "xAINetworkingModel"],
+      ["fireworksThinkingModel", "fireworksNetworkingModel"],
+      ["moonshotThinkingModel", "moonshotNetworkingModel"],
+      ["mistralThinkingModel", "mistralNetworkingModel"],
+      ["ollamaThinkingModel", "ollamaNetworkingModel"],
+    ] as const satisfies ReadonlyArray<readonly [keyof SettingFormValues, keyof SettingFormValues]>;
+
+    for (const [thinkingField, taskField] of providerThinkingToTaskFieldMap) {
+      const thinkingValue = form.getValues(thinkingField);
+      form.setValue(taskField, thinkingValue ?? "", {
+        shouldDirty: true,
+      });
+    }
+
+    const providerStateKey = getProviderStateKey(provider);
+    const activeThinkingField =
+      provider === "google"
+        ? "thinkingModel"
+        : (`${providerStateKey}ThinkingModel` as keyof SettingFormValues);
+    const activeTaskField =
+      provider === "google"
+        ? "networkingModel"
+        : (`${providerStateKey}NetworkingModel` as keyof SettingFormValues);
+    const activeThinkingValue = form.getValues(activeThinkingField);
+
+    form.setValue(activeTaskField, activeThinkingValue ?? "", {
+      shouldDirty: true,
+    });
+  };
+
   return (
 <TabsContent className="space-y-4  min-h-[250px]" value="llm">
   <div className={BUILD_MODE === "export" ? "hidden" : ""}>
@@ -169,6 +209,40 @@ export default function LLMTab({
               {!isDisabledAIProvider("ollama") ? (
                 <SelectItem value="ollama">Ollama</SelectItem>
               ) : null}
+            </SelectContent>
+          </Select>
+        </FormControl>
+      </FormItem>
+    )}
+  />
+  <FormField
+    control={form.control}
+    name="advancedModelRouting"
+    render={({ field }) => (
+      <FormItem className="from-item">
+        <FormLabel className="from-label">
+          <HelpTip tip={t("setting.advancedModelRoutingTip")}>
+            {t("setting.advancedModelRouting")}
+          </HelpTip>
+        </FormLabel>
+        <FormControl>
+          <Select
+            value={field.value}
+            onValueChange={(value) => {
+              field.onChange(value);
+              updateSetting("advancedModelRouting", value);
+
+              if (value === "disable") {
+                syncTaskModelValues();
+              }
+            }}
+          >
+            <SelectTrigger className="form-field">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="enable">{t("setting.enable")}</SelectItem>
+              <SelectItem value="disable">{t("setting.disable")}</SelectItem>
             </SelectContent>
           </Select>
         </FormControl>
@@ -768,7 +842,11 @@ export default function LLMTab({
       control={form.control}
       name="networkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -934,7 +1012,11 @@ export default function LLMTab({
       control={form.control}
       name="openRouterNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -1107,7 +1189,11 @@ export default function LLMTab({
       control={form.control}
       name="openAINetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -1310,7 +1396,11 @@ export default function LLMTab({
       control={form.control}
       name="anthropicNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -1476,7 +1566,11 @@ export default function LLMTab({
       control={form.control}
       name="deepseekNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -1642,7 +1736,11 @@ export default function LLMTab({
       control={form.control}
       name="xAINetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -1808,7 +1906,11 @@ export default function LLMTab({
       control={form.control}
       name="fireworksNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -1981,7 +2083,11 @@ export default function LLMTab({
       control={form.control}
       name="moonshotNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -2154,7 +2260,11 @@ export default function LLMTab({
       control={form.control}
       name="mistralNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}
@@ -2321,7 +2431,11 @@ export default function LLMTab({
       control={form.control}
       name="ollamaNetworkingModel"
       render={({ field }) => (
-        <FormItem className="from-item">
+        <FormItem
+          className={cn("from-item", {
+            hidden: !isAdvancedModelRouting,
+          })}
+        >
           <FormLabel className="from-label">
             <HelpTip tip={t("setting.networkingModelTip")}>
               {t("setting.networkingModel")}

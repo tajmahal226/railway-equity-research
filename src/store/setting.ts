@@ -248,6 +248,7 @@ export interface SettingStore {
   language: string;
   theme: string;
   debug: "enable" | "disable";
+  advancedModelRouting: "enable" | "disable";
   references: "enable" | "disable";
   citationImage: "enable" | "disable";
   smoothTextStreamType: "character" | "word" | "line";
@@ -357,6 +358,7 @@ export const defaultValues: SettingStore = {
   language: "",
   theme: "system",
   debug: "disable",
+  advancedModelRouting: "disable",
   references: "enable",
   citationImage: "enable",
   smoothTextStreamType: "word",

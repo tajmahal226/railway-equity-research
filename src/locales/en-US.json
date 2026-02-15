@@ -280,6 +280,8 @@
     "thinkingModelTip": "The core model used in deep research, it is recommended to use the thinking model.",
     "networkingModel": "Task Model",
     "networkingModelTip": "The model used for secondary tasks, high output models are recommended.",
+    "advancedModelRouting": "Advanced Model Routing",
+    "advancedModelRoutingTip": "Task model follows the thinking model unless advanced routing is enabled.",
     "recommendedModels": "Recommended Models",
     "basicModels": "Basic Models",
     "modelListLoadingPlaceholder": "Please select model",

@@ -176,6 +176,10 @@ export function resolveProviderModels(
     getProviderModelFromStore(store, provider, "Networking") ||
     defaults.taskModel;
 
+  if (store.advancedModelRouting !== "enable") {
+    return { thinkingModel, taskModel: thinkingModel };
+  }
+
   return { thinkingModel, taskModel };
 }
 

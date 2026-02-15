@@ -51,7 +51,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { logger } from "@/utils/logger";
 import { useSettingStore } from "@/store/setting";
-import { getProviderStateKey, getProviderApiKey, resolveActiveProvider } from "@/utils/provider";
+import {
+  getProviderApiKey,
+  resolveActiveProvider,
+  resolveProviderModels,
+} from "@/utils/provider";
 
 // Import MagicDown for rendering markdown
 const MagicDown = dynamic(() => import("@/components/MagicDown"));
@@ -164,13 +168,10 @@ export default function BulkCompanyResearch() {
     try {
       // Get current AI provider and model settings from user configuration
       const currentProvider = resolveActiveProvider(settingStore);
-      const providerKey = getProviderStateKey(currentProvider);
-      const thinkingModel = settingStore[
-        `${providerKey}ThinkingModel` as keyof typeof settingStore
-      ] as string;
-      const taskModel = settingStore[
-        `${providerKey}NetworkingModel` as keyof typeof settingStore
-      ] as string;
+      const { thinkingModel, taskModel } = resolveProviderModels(
+        settingStore,
+        currentProvider,
+      );
 
       // Get API keys from user settings
       const thinkingApiKey = getProviderApiKey(settingStore, currentProvider);

@@ -330,6 +330,106 @@ export class CompanyDeepResearch {
     logger.log(`[DEBUG] getTaskModelSettings: provider="${providerId}", model="${modelId}", settings=`, filteredSettings);
     return filteredSettings;
   }
+
+  private toErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return String(error);
+  }
+
+  private isNoOutputError(error: unknown): boolean {
+    const message = this.toErrorMessage(error);
+    return (
+      message.includes("AI_NoOutputGeneratedError") ||
+      message.includes("No output generated")
+    );
+  }
+
+  private async generateReportWithFallback(
+    prompt: string,
+    thinkingSettings: any,
+    taskSettings: any,
+    phase: string,
+    chunkProcessor?: (chunk: string) => void,
+  ): Promise<string> {
+    try {
+      const streamResult = streamText({
+        model: this.thinkingModel,
+        prompt,
+        ...thinkingSettings,
+      });
+
+      let receivedChunk = false;
+      for await (const chunk of streamResult.textStream) {
+        if (chunk && chunk.trim().length > 0) {
+          receivedChunk = true;
+        }
+
+        chunkProcessor?.(chunk);
+      }
+
+      const streamedText = (await streamResult.text).trim();
+      if (streamedText.length > 0) {
+        return streamedText;
+      }
+
+      if (receivedChunk) {
+        logger.warn(
+          `[CompanyDeepResearch] ${phase}: received stream chunks but final text was empty, triggering fallback generation.`,
+        );
+      }
+
+      throw new Error("No output generated from streaming response.");
+    } catch (error) {
+      if (!this.isNoOutputError(error)) {
+        throw error;
+      }
+
+      logger.warn(
+        `[CompanyDeepResearch] ${phase}: stream produced no output; retrying with non-streaming fallbacks. ${this.toErrorMessage(error)}`,
+      );
+    }
+
+    try {
+      const { text } = await generateText({
+        model: this.thinkingModel,
+        prompt,
+        ...thinkingSettings,
+      });
+
+      const normalizedText = text.trim();
+      if (normalizedText.length > 0) {
+        return normalizedText;
+      }
+    } catch (error) {
+      logger.warn(
+        `[CompanyDeepResearch] ${phase}: non-stream thinking fallback failed. ${this.toErrorMessage(error)}`,
+      );
+    }
+
+    try {
+      const { text } = await generateText({
+        model: this.taskModel,
+        prompt,
+        ...taskSettings,
+      });
+
+      const normalizedText = text.trim();
+      if (normalizedText.length > 0) {
+        return normalizedText;
+      }
+    } catch (error) {
+      logger.warn(
+        `[CompanyDeepResearch] ${phase}: task-model fallback failed. ${this.toErrorMessage(error)}`,
+      );
+    }
+
+    throw new Error(
+      "No output generated after fallback attempts. Try fast/medium depth or switch provider/model.",
+    );
+  }
   
   /**
    * Run fast research - no web searches, just AI analysis
@@ -901,18 +1001,27 @@ Be specific and include data points, dates, and concrete details when available.
         prompt: prompt,
         ...fastTaskSettings, // Some creativity but mostly factual
       });
+
+      const normalizedText = text.trim();
+      if (normalizedText.length === 0) {
+        throw new Error(
+          "No output generated. Try switching model/provider or reducing research depth.",
+        );
+      }
       
       // Send the complete report
       this.config.onMessage?.({
         type: "report-complete",
-        content: text
+        content: normalizedText
       });
       
-      return text;
+      return normalizedText;
       
     } catch (error) {
       console.error("Error calling task model:", error);
-      throw new Error(`Failed to generate fast analysis: ${error}`);
+      throw new Error(
+        `Failed to generate fast analysis: ${this.toErrorMessage(error)}`,
+      );
     }
   }
   
@@ -971,24 +1080,21 @@ Keep the analysis concise but insightful, focusing on the most important investm
         message: "Generating investment analysis..."
       });
       
-      // Use streamText for medium report
       const mediumThinkingSettings = this.getThinkingModelSettings({ temperature: 0.5, maxOutputTokens: 5000 });
-      
-      const result = streamText({
-        model: this.thinkingModel,
-        prompt: mediumPrompt,
-        ...mediumThinkingSettings, // Smaller than deep report
-      });
-      
-      // Stream the report
-      for await (const chunk of result.textStream) {
-        this.config.onMessage?.({
-          type: "report-chunk",
-          content: chunk
-        });
-      }
-      
-      const finalReport = await result.text;
+      const mediumTaskSettings = this.getTaskModelSettings({ temperature: 0.5, maxOutputTokens: 5000 });
+
+      const finalReport = await this.generateReportWithFallback(
+        mediumPrompt,
+        mediumThinkingSettings,
+        mediumTaskSettings,
+        "medium report",
+        (chunk: string) => {
+          this.config.onMessage?.({
+            type: "report-chunk",
+            content: chunk,
+          });
+        },
+      );
       
       // Deduplicate sources
       const uniqueSources = Array.from(
@@ -1010,7 +1116,9 @@ Keep the analysis concise but insightful, focusing on the most important investm
       
     } catch (error) {
       console.error("Error generating medium report:", error);
-      throw new Error(`Failed to generate investment analysis: ${error}`);
+      throw new Error(
+        `Failed to generate investment analysis: ${this.toErrorMessage(error)}`,
+      );
     }
   }
   
@@ -1083,43 +1191,36 @@ IMPORTANT: Create a thorough, professional investment analysis that would prepar
         message: "Generating comprehensive investment report..."
       });
       
-      // Use streamText for real-time updates
       const thinkingSettings = this.getThinkingModelSettings({ temperature: 0.5, maxOutputTokens: 8000 });
-      
-      const result = streamText({
-        model: this.thinkingModel,
-        prompt: reportPrompt,
-        ...thinkingSettings, // Defensive cleaning applied
-      });
-      
-      const textStream = result.textStream;
-      
       // Process the stream with thinking tags
       const processor = new ThinkTagStreamProcessor();
-      
-      // Stream the report as it's generated
-      for await (const chunk of textStream) {
-        // Process chunk with callbacks for content and thinking output
-        processor.processChunk(
-          chunk,
-          // Content output callback
-          (content: string) => {
-            this.config.onMessage?.({
-              type: "report-chunk",
-              content: content
-            });
-          },
-          // Thinking output callback (optional)
-          (thinking: string) => {
-            this.config.onReasoning?.({
-              content: thinking
-            });
-          }
-        );
-      }
-      
-      // Get the final processed text
-      const finalReport = await result.text;
+      const taskFallbackSettings = this.getTaskModelSettings({ temperature: 0.5, maxOutputTokens: 8000 });
+
+      const finalReport = await this.generateReportWithFallback(
+        reportPrompt,
+        thinkingSettings,
+        taskFallbackSettings,
+        "deep report",
+        (chunk: string) => {
+          // Process chunk with callbacks for content and thinking output
+          processor.processChunk(
+            chunk,
+            // Content output callback
+            (content: string) => {
+              this.config.onMessage?.({
+                type: "report-chunk",
+                content: content,
+              });
+            },
+            // Thinking output callback (optional)
+            (thinking: string) => {
+              this.config.onReasoning?.({
+                content: thinking,
+              });
+            },
+          );
+        },
+      );
       
       // Parse sections from the report (assuming markdown headers)
       const sectionRegex = /^##\s+(.+)$/gm;
@@ -1170,7 +1271,9 @@ IMPORTANT: Create a thorough, professional investment analysis that would prepar
       
     } catch (error) {
       console.error("Error generating deep report:", error);
-      throw new Error(`Failed to generate investment report: ${error}`);
+      throw new Error(
+        `Failed to generate investment report: ${this.toErrorMessage(error)}`,
+      );
     }
   }
 }
