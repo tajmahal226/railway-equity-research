@@ -6,6 +6,12 @@ import {
   getSearchProviderBaseURL,
 } from "../utils";
 import { logger } from "@/utils/logger";
+import {
+  isResearchAIProvider,
+  isSearchProvider,
+  RESEARCH_AI_PROVIDERS,
+  SEARCH_PROVIDERS,
+} from "@/constants/provider-compat";
 
 // Remove edge runtime to support long-running SSE connections
 // Edge runtime has 25-30 second timeout which is too short for research
@@ -51,6 +57,26 @@ export async function POST(req: NextRequest) {
     aiApiKey,
     searchApiKey,
   } = await req.json();
+
+  if (!isResearchAIProvider(provider)) {
+    return NextResponse.json(
+      {
+        code: 400,
+        message: `Unsupported AI provider "${provider}". Supported providers: ${RESEARCH_AI_PROVIDERS.join(", ")}.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!isSearchProvider(searchProvider)) {
+    return NextResponse.json(
+      {
+        code: 400,
+        message: `Unsupported search provider "${searchProvider}". Supported providers: ${SEARCH_PROVIDERS.join(", ")}.`,
+      },
+      { status: 400 }
+    );
+  }
 
   // Validate that user provided API keys
   if (!aiApiKey && provider !== "ollama") {

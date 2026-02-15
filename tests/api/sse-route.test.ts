@@ -48,7 +48,7 @@ describe("POST /api/sse", () => {
     resetAccessPassword();
   });
 
-  const createRequest = (payload = basePayload, headers: Record<string, string> = {}) =>
+  const createRequest = (payload: Record<string, unknown> = basePayload, headers: Record<string, string> = {}) =>
     new NextRequest("http://localhost/api/sse", {
       method: "POST",
       headers: {
@@ -110,6 +110,32 @@ describe("POST /api/sse", () => {
     expect(await response.json()).toEqual({
       code: 400,
       message: "API key required for openai. Please configure your API key in Settings.",
+    });
+    expect(startMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when AI provider is unsupported", async () => {
+    const payload = { ...basePayload, provider: "unsupported-provider" };
+    const response = await POST(createRequest(payload));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      code: 400,
+      message:
+        'Unsupported AI provider "unsupported-provider". Supported providers: google, openai, anthropic, deepseek, xai, fireworks, moonshot, mistral, openrouter, ollama.',
+    });
+    expect(startMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when search provider is unsupported", async () => {
+    const payload = { ...basePayload, searchProvider: "unsupported-search" };
+    const response = await POST(createRequest(payload));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      code: 400,
+      message:
+        'Unsupported search provider "unsupported-search". Supported providers: model, tavily, firecrawl, exa, bocha, searxng.',
     });
     expect(startMock).not.toHaveBeenCalled();
   });

@@ -7,12 +7,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from 'zod';
 import { logger } from "@/utils/logger";
+import {
+  normalizeFinancialProviderId,
+  type FinancialProviderId,
+} from "@/constants/provider-compat";
 
 export const runtime = "edge";
 
 type StockDataProvider = "financial_datasets" | "alpha_vantage" | "yahoo_finance";
 
-type NormalizedFinancialProvider = StockDataProvider | "mock" | "auto";
+type NormalizedFinancialProvider = FinancialProviderId;
 
 const FinancialDataRequestSchema = z.object({
   action: z.enum(["stock-price", "company-financials", "company-profile", "search-companies"]),
@@ -30,40 +34,11 @@ const FinancialDataRequestSchema = z.object({
   deterministic: z.boolean().optional(),
 });
 
-function normalizeFinancialProvider(provider?: string | null): NormalizedFinancialProvider {
-  if (!provider) {
-    return "mock";
-  }
-
-  const value = provider.toLowerCase();
-  if (value.includes("mock")) {
-    return "mock";
-  }
-
-  if (value.includes("auto") || value === "default") {
-    return "auto";
-  }
-
-  if (value.includes("financial")) {
-    return "financial_datasets";
-  }
-
-  if (value.includes("alpha")) {
-    return "alpha_vantage";
-  }
-
-  if (value.includes("yahoo")) {
-    return "yahoo_finance";
-  }
-
-  return "auto";
-}
-
 // Helper function to get financial provider configuration
 function getFinancialConfig(clientConfig?: any) {
   // Use client-provided configuration if available, otherwise fallback to environment variables
   const rawProvider = clientConfig?.financialProvider || process.env.FINANCIAL_PROVIDER || "mock";
-  const provider = normalizeFinancialProvider(rawProvider);
+  const provider = normalizeFinancialProviderId(rawProvider);
   const alphaVantageKey = clientConfig?.alphaVantageApiKey || process.env.ALPHA_VANTAGE_API_KEY || "";
   const yahooKey = clientConfig?.yahooFinanceApiKey || process.env.YAHOO_FINANCE_API_KEY || "";
   const financialDatasetsKey = clientConfig?.financialDatasetsApiKey || process.env.FINANCIAL_DATASETS_API_KEY || "";
