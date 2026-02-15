@@ -50,7 +50,7 @@ export const config = {
   matcher: "/api/:path*",
 };
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (NODE_ENV === "production") console.debug(request);
 
   const {
@@ -79,17 +79,10 @@ export async function middleware(request: NextRequest) {
 
   // Read request body once to avoid multiple consumption issues
   let requestBody = null;
-  let clonedRequest = request;
   if (request.method.toUpperCase() !== "GET") {
     try {
       const body = await request.text();
       requestBody = body ? JSON.parse(body) : {};
-      // Create a new request with the body intact for downstream processing
-      clonedRequest = new NextRequest(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: body || undefined,
-      });
     } catch (error) {
       console.error("Error parsing request body in middleware:", error);
       requestBody = {};

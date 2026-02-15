@@ -73,7 +73,7 @@ function addQuoteBeforeAllLines(text: string = "") {
     .join("\n");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 class DeepResearch {
   protected options: DeepResearchOptions;
   onMessage: (event: string, data: any) => void = () => {};

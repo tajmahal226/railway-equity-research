@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { streamText, smoothStream, type JSONValue, type Tool } from "ai";
 import { parsePartialJson } from 'ai';
 import { openai } from "@ai-sdk/openai";
-import { type GoogleGenerativeAIProviderMetadata } from "@ai-sdk/google";
 import { useTranslation } from "react-i18next";
 import Plimit from "p-limit";
 import useModelProvider from "@/hooks/useAiProvider";

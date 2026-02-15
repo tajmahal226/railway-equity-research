@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
-import { middleware } from '../../src/middleware';
+import { NextRequest } from 'next/server';
+import { proxy as middleware } from '../../src/proxy';
 
 // Mock dependencies
 vi.mock('../../src/utils/model', () => ({

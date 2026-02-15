@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(pnpm test:*)",
-      "mcp__plugin_github_github__create_repository"
+      "mcp__plugin_github_github__create_repository",
+      "WebSearch",
+      "Bash(/bin/ls:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
