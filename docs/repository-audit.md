@@ -1,9 +1,9 @@
 # Repository Security & Quality Audit
 
 ## Phase 1 – Repository Assessment
-- **Structure:** `src/` (Next.js app, components, hooks, Zustand stores, utils), `public/` (static assets), `tests/` (Vitest suites), `docs/` (guides), root configs (`next.config.ts`, `tailwind.config.ts`, `vitest.config.mts`, `eslint.config.mjs`), and automation under `.github/workflows/`.
+- **Structure:** `src/` (Next.js app, components, hooks, Zustand stores, utils), `public/` (static assets), `tests/` (Vitest suites), `docs/` (guides), root configs (`next.config.ts`, `tailwind.config.ts`, `vitest.config.ts`, `eslint.config.mjs`), and automation under `.github/workflows/`.
 - **Tech stack:** Next.js 15, React 19, TypeScript, Tailwind, Zustand, Vercel AI SDK, Radix UI, Vitest, Playwright; CI via GitHub Actions (docker build/publish, npm publish, GHCR, sync jobs).
-- **Entry points & critical paths:** `src/app/page.tsx` (UI shell), `src/app/api/*` (research/SSE/search/middleware endpoints), `src/utils/deep-research` and `src/utils/api/*` (model orchestration), `src/store/*` (client state).
+- **Entry points & critical paths:** `src/app/page.tsx` (UI shell), `src/app/api/*` (research/SSE/search/middleware endpoints), `src/utils/deep-research` (model orchestration), `src/store/*` (client state).
 - **Build/test commands:** `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm dev` (Turbopack).
 
 ## Phase 2 – Bug & Vulnerability Discovery

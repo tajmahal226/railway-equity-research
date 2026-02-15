@@ -29,7 +29,7 @@ pnpm build:standalone
 pnpm start
 
 # Lint
-npx eslint src/
+pnpm lint
 
 # Unit tests (Vitest)
 pnpm test
