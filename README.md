@@ -30,8 +30,8 @@ TJ Deep Research orchestrates advanced "Thinking" and "Task" AI models with live
 ## Installation
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/tajmahal226/deep-equity-research.git
-   cd deep-equity-research
+   git clone https://github.com/tajmahal226/railway-equity-research.git
+   cd railway-equity-research
    ```
 2. **Install dependencies**
    ```bash
@@ -152,5 +152,3 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions and se
 
 ## License
 This project is licensed under the [MIT License](./LICENSE).
-# Force rebuild Mon Feb  2 10:50:28 EST 2026
-# Cache bust 1770061850

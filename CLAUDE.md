@@ -109,7 +109,7 @@ All AI provider routes (`/api/ai/[provider]/[...slug]/route.ts`) use a generic `
 When adding a new AI provider:
 1. Create route at `src/app/api/ai/[provider]/[...slug]/route.ts`
 2. Export a handler using `createProxyHandler(apiBaseUrl, options)`
-3. Add provider-specific settings in `src/utils/api/[provider].ts`
+3. Add provider wiring in `src/utils/deep-research/provider.ts` and related model metadata
 4. Add base URL configuration in `next.config.ts`
 
 #### 2. Research Orchestration (Deep Research)
@@ -132,7 +132,7 @@ User settings (including API keys) are stored in Zustand with persist middleware
 
 #### 4. Multi-Provider AI Support
 
-Each AI provider has its own configuration in `src/utils/api/[provider].ts`. The `createAIProvider()` function in `provider.ts` abstracts provider differences:
+AI providers are configured through `src/utils/deep-research/provider.ts`. The `createAIProvider()` function abstracts provider differences:
 - Model-specific parameter filtering (via `filterModelSettings()`)
 - Token limit handling (via `getMaxTokens()` from `constants/token-limits.ts`)
 - Provider-specific features (Google search grounding, OpenAI web search tools)

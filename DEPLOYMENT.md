@@ -83,7 +83,7 @@ RATE_LIMIT_CRAWLER=50
 ### Option 1: Vercel Dashboard (Recommended)
 1. Go to [vercel.com](https://vercel.com)
 2. Click "New Project"
-3. Import from GitHub: `tajmahal226/deep-equity-research`
+3. Import from GitHub: `tajmahal226/railway-equity-research`
 4. Configure environment variables (see below)
 5. Deploy
 

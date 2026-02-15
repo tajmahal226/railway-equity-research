@@ -18,7 +18,7 @@ Vercel's serverless functions timeout at 60 seconds (Pro/Hobby tiers), which is 
 
 1. In Railway dashboard, click **"New Project"**
 2. Select **"Deploy from GitHub repo"**
-3. Find and select: `tajmahal226/deep-equity-research`
+3. Find and select: `tajmahal226/railway-equity-research`
 4. Railway will automatically detect it's a Node.js project
 
 ### 3. Configure Environment Variables
@@ -113,4 +113,4 @@ If you ever need to switch back:
 
 ---
 
-Need help? Check the [main README](./README.md) or [open an issue](https://github.com/tajmahal226/deep-equity-research/issues).
+Need help? Check the [main README](./README.md) or [open an issue](https://github.com/tajmahal226/railway-equity-research/issues).
