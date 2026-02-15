@@ -119,13 +119,49 @@ function createRNG(deterministic: boolean, seed = 42) {
   };
 }
 
+async function parseProviderJsonResponse(
+  response: Response,
+  providerName: string,
+  ticker: string,
+): Promise<any | null> {
+  const contentType = response.headers.get("content-type") || "unknown";
+  const responseBody = await response.text();
+  const preview = responseBody.slice(0, 120).replace(/\s+/g, " ").trim();
+
+  if (!response.ok) {
+    logger.warn(
+      `[Financial API] ${providerName} request failed for ${ticker}: status=${response.status}, contentType=${contentType}, bodyPreview="${preview}"`,
+    );
+    return null;
+  }
+
+  if (!responseBody.trim()) {
+    logger.warn(`[Financial API] ${providerName} returned an empty response for ${ticker}`);
+    return null;
+  }
+
+  try {
+    return JSON.parse(responseBody);
+  } catch (error) {
+    logger.warn(
+      `[Financial API] ${providerName} returned non-JSON for ${ticker}: contentType=${contentType}, bodyPreview="${preview}", parseError=${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    return null;
+  }
+}
+
 // Helper function to fetch stock data from Financial Datasets
 async function fetchFinancialDatasetsStock(ticker: string, apiKey: string) {
   try {
     const response = await fetch(
       `https://api.financialdatasets.ai/v1/companies/tickers/${ticker.toUpperCase()}?apikey=${apiKey}`
     );
-    const data = await response.json();
+    const data = await parseProviderJsonResponse(response, "Financial Datasets", ticker);
+    if (!data) {
+      return null;
+    }
     
     if (data.success && data.data) {
       const company = data.data;
@@ -146,7 +182,8 @@ async function fetchFinancialDatasetsStock(ticker: string, apiKey: string) {
       };
     }
     
-    throw new Error("Invalid API response");
+    logger.warn(`[Financial API] Financial Datasets invalid payload for ${ticker}`);
+    return null;
   } catch (error) {
     logger.log(`[Financial API] Error fetching Financial Datasets data for ${ticker}: ${error}`);
     return null;
@@ -159,7 +196,10 @@ async function fetchRealStockData(ticker: string, apiKey: string) {
     const response = await fetch(
       `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`
     );
-    const data = await response.json();
+    const data = await parseProviderJsonResponse(response, "Alpha Vantage", ticker);
+    if (!data) {
+      return null;
+    }
     
     if (data["Global Quote"]) {
       const quote = data["Global Quote"];
@@ -178,7 +218,8 @@ async function fetchRealStockData(ticker: string, apiKey: string) {
       };
     }
     
-    throw new Error("Invalid API response");
+    logger.warn(`[Financial API] Alpha Vantage invalid payload for ${ticker}`);
+    return null;
   } catch (error) {
     logger.log(`[Financial API] Error fetching real data for ${ticker}: ${error}`);
     return null;
@@ -196,7 +237,10 @@ async function fetchYahooFinanceStock(ticker: string, _apiKey?: string) {
     const response = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${ticker.toUpperCase()}?interval=1d&range=1d`
     );
-    const data = await response.json();
+    const data = await parseProviderJsonResponse(response, "Yahoo Finance", ticker);
+    if (!data) {
+      return null;
+    }
     
     if (data.chart && data.chart.result && data.chart.result[0]) {
       const result = data.chart.result[0];
@@ -226,7 +270,8 @@ async function fetchYahooFinanceStock(ticker: string, _apiKey?: string) {
       }
     }
     
-    throw new Error("Invalid API response");
+    logger.warn(`[Financial API] Yahoo Finance invalid payload for ${ticker}`);
+    return null;
   } catch (error) {
     logger.log(`[Financial API] Error fetching Yahoo Finance data for ${ticker}: ${error}`);
     return null;

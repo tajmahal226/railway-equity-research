@@ -18,7 +18,8 @@
     "start": "next start",
     "lint": "eslint src/ tests/",
     "test": "vitest run",
-    "test:e2e": "pnpm build && playwright test"
+    "test:e2e:check": "playwright install chromium && node scripts/check-playwright-env.mjs",
+    "test:e2e": "pnpm test:e2e:check && pnpm build && playwright test"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
