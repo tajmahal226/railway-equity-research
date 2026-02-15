@@ -60,10 +60,6 @@ export function isSearchProvider(provider: string | undefined | null): boolean {
 }
 
 export function getSearchProvidersForMode(mode: 'local' | 'proxy'): string[] {
-  if (mode === 'proxy') {
-    return [...SEARCH_PROVIDERS];
-  }
-
   return [...SEARCH_PROVIDERS];
 }
 
