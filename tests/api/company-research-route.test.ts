@@ -59,4 +59,18 @@ describe('POST /api/company-research provider validation', () => {
       'Unsupported searchProviderId "unsupported-search".'
     );
   });
+
+  it('returns 400 for invalid searchDepth', async () => {
+    const response = await POST(
+      createRequest({
+        ...requiredBody,
+        searchDepth: 'invalid-depth',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.text()).resolves.toContain(
+      'Invalid searchDepth "invalid-depth".'
+    );
+  });
 });

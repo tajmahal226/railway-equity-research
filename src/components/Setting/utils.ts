@@ -74,6 +74,7 @@ export const formSchema = z.object({
   language: z.string().optional(),
   theme: z.string().optional(),
   debug: z.enum(["enable", "disable"]).optional(),
+  advancedModelRouting: z.enum(["enable", "disable"]).optional(),
   references: z.enum(["enable", "disable"]).optional(),
   citationImage: z.enum(["enable", "disable"]).optional(),
   smoothTextStreamType: z.enum(["character", "word", "line"]).optional(),

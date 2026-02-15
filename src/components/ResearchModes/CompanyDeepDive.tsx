@@ -28,7 +28,11 @@ import { logger } from "@/utils/logger";
 import { useSettingStore } from "@/store/setting";
 import { useTaskStore } from "@/store/task";
 import { useGlobalStore } from "@/store/global";
-import { getProviderStateKey, getProviderApiKey, resolveActiveProvider } from "@/utils/provider";
+import {
+  getProviderApiKey,
+  resolveActiveProvider,
+  resolveProviderModels,
+} from "@/utils/provider";
 import { useResearchCache } from "@/hooks/useResearchCache";
 
 const MagicDown = dynamic(() => import("@/components/MagicDown"));
@@ -143,7 +147,7 @@ export default function CompanyDeepDive() {
 
     // Check if API key is configured
     const apiKey = getProviderApiKey(settingStore, currentProvider);
-    if (!apiKey) {
+    if (currentProvider !== "ollama" && !apiKey) {
       toast.error(t("errors.noApiKeyConfigured", "Please add your API key in Settings. The app requires you to bring your own API key."));
       useGlobalStore.getState().setOpenSetting(true);
       return;
@@ -159,13 +163,10 @@ export default function CompanyDeepDive() {
 
     try {
       // Get current AI provider and model settings from user configuration
-      const providerKey = getProviderStateKey(currentProvider);
-      const thinkingModel = settingStore[
-        `${providerKey}ThinkingModel` as keyof typeof settingStore
-      ] as string;
-      const taskModel = settingStore[
-        `${providerKey}NetworkingModel` as keyof typeof settingStore
-      ] as string;
+      const { thinkingModel, taskModel } = resolveProviderModels(
+        settingStore,
+        currentProvider,
+      );
 
       // Check cache first (if enabled and not forcing refresh)
       if (isCacheEnabled && !forceRefresh) {
@@ -194,7 +195,9 @@ export default function CompanyDeepDive() {
       const thinkingApiKey = getProviderApiKey(settingStore, currentProvider);
       const taskApiKey = getProviderApiKey(settingStore, currentProvider); // Usually same provider
       const searchProvider = settingStore.searchProvider || "model";
-      const searchApiKey = getProviderApiKey(settingStore, searchProvider);
+      const searchApiKey = getProviderApiKey(settingStore, searchProvider, {
+        allowGenericFallback: false,
+      });
 
       // Prepare the request body with all company information and user's AI settings
       const requestBody = {
@@ -376,7 +379,10 @@ export default function CompanyDeepDive() {
       }
       
     } catch (error: any) {
-      if (error?.name === "AbortError") {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error ?? "");
+
+      if (error?.name === "AbortError" || errorMessage.includes("AbortError")) {
         logger.log("Company research aborted");
         setStatus("idle");
         setAbortController(null); // Clear controller
@@ -384,10 +390,10 @@ export default function CompanyDeepDive() {
       }
 
       console.error("Company research error:", error);
-      setError(error.message);
+      setError(errorMessage || "Research failed");
       setAbortController(null); // Clear controller
       setSearchResults({
-        error: error instanceof Error ? error.message : "Research failed",
+        error: errorMessage || "Research failed",
         company: companyName,
       });
     }
@@ -610,10 +616,10 @@ export default function CompanyDeepDive() {
           {/* Cache Status Indicator */}
           {isCacheEnabled && companyName.trim() && (() => {
             const currentProvider = resolveActiveProvider(settingStore);
-            const providerKey = getProviderStateKey(currentProvider);
-            const thinkingModel = settingStore[
-              `${providerKey}ThinkingModel` as keyof typeof settingStore
-            ] as string;
+            const { thinkingModel } = resolveProviderModels(
+              settingStore,
+              currentProvider,
+            );
             const cacheMetadata = getCacheMetadata({
               type: "company-research",
               companyName,
@@ -668,10 +674,10 @@ export default function CompanyDeepDive() {
             {/* Refresh button - only show if cache exists */}
             {isCacheEnabled && companyName.trim() && (() => {
               const currentProvider = resolveActiveProvider(settingStore);
-              const providerKey = getProviderStateKey(currentProvider);
-              const thinkingModel = settingStore[
-                `${providerKey}ThinkingModel` as keyof typeof settingStore
-              ] as string;
+              const { thinkingModel } = resolveProviderModels(
+                settingStore,
+                currentProvider,
+              );
               const cacheMetadata = getCacheMetadata({
                 type: "company-research",
                 companyName,

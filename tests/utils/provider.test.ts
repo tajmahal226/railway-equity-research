@@ -42,14 +42,35 @@ describe("getProviderApiKey", () => {
   it("works with search providers", () => {
     expect(getProviderApiKey(store, "tavily")).toBe("tavily-key");
   });
+
+  it("can disable generic fallback for provider keys", () => {
+    expect(
+      getProviderApiKey(store, "anthropic", { allowGenericFallback: false }),
+    ).toBe("");
+  });
 });
 
 describe("resolveProviderModels", () => {
-  it("returns the persisted models when they exist", () => {
+  it("uses thinking model for task model when advanced routing is disabled", () => {
     const store = cloneStore({
       openAIThinkingModel: "custom-think",
       openAINetworkingModel: "custom-task",
       provider: "openai",
+      advancedModelRouting: "disable",
+    });
+
+    expect(resolveProviderModels(store, "openai")).toEqual({
+      thinkingModel: "custom-think",
+      taskModel: "custom-think",
+    });
+  });
+
+  it("keeps independent task model when advanced routing is enabled", () => {
+    const store = cloneStore({
+      openAIThinkingModel: "custom-think",
+      openAINetworkingModel: "custom-task",
+      provider: "openai",
+      advancedModelRouting: "enable",
     });
 
     expect(resolveProviderModels(store, "openai")).toEqual({
@@ -63,6 +84,7 @@ describe("resolveProviderModels", () => {
       openRouterThinkingModel: "",
       openRouterNetworkingModel: "",
       provider: "openrouter",
+      advancedModelRouting: "enable",
     });
 
     expect(resolveProviderModels(store, "openrouter")).toEqual({
@@ -72,7 +94,7 @@ describe("resolveProviderModels", () => {
   });
 
   it("uses OpenAI defaults when the provider is unknown", () => {
-    const store = cloneStore();
+    const store = cloneStore({ advancedModelRouting: "enable" });
 
     expect(resolveProviderModels(store, "unknown-provider")).toEqual(
       getProviderModelDefaults("openai"),
