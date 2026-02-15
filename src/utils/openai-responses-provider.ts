@@ -9,6 +9,21 @@
 
 import { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
+class OpenAIResponsesValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly details: {
+      messagesCount: number;
+      nonSystemCount: number;
+      hasSystemMessage: boolean;
+      modelId: string;
+    }
+  ) {
+    super(message);
+    this.name = "OpenAIResponsesValidationError";
+  }
+}
+
 interface ResponsesProviderOptions {
   baseURL?: string;
   apiKey?: string;
@@ -62,6 +77,91 @@ interface ResponsesResponse {
   };
   user?: string;
   metadata?: Record<string, string>;
+}
+
+/**
+ * Validates and extracts messages for OpenAI Responses API
+ * Throws descriptive errors if input is invalid
+ */
+function validateAndExtractMessages(
+  messages: any[],
+  modelId: string
+): {
+  systemMessage: any;
+  nonSystemMessages: any[];
+} {
+  const messagesCount = messages?.length || 0;
+  const hasSystemMessage = messages?.some((m: any) => m.role === "system") || false;
+
+  // Check if messages is undefined or empty
+  if (!messages || messagesCount === 0) {
+    throw new OpenAIResponsesValidationError(
+      `OpenAI Responses API requires at least one user or assistant message. ` +
+      `Received empty messages array. ` +
+      `Please ensure your prompt or query is not empty.`,
+      {
+        messagesCount: 0,
+        nonSystemCount: 0,
+        hasSystemMessage: false,
+        modelId,
+      }
+    );
+  }
+
+  // Filter out system messages (they become "instructions" in Responses API)
+  const systemMessage = messages.find((p: any) => p.role === "system");
+  const nonSystemMessages = messages.filter((p: any) => p.role !== "system");
+
+  // Check if we have any non-system messages
+  if (nonSystemMessages.length === 0) {
+    throw new OpenAIResponsesValidationError(
+      `OpenAI Responses API requires at least one user or assistant message. ` +
+      `Received only ${messagesCount} system message(s). ` +
+      `System prompts should be provided via the 'system' parameter in streamText(), ` +
+      `or as a message with role 'system' along with user/assistant messages.`,
+      {
+        messagesCount,
+        nonSystemCount: 0,
+        hasSystemMessage: true,
+        modelId,
+      }
+    );
+  }
+
+  // Validate message content
+  const hasValidContent = nonSystemMessages.some((m: any) => {
+    const content = m.content;
+    if (typeof content === "string") {
+      return content.trim().length > 0;
+    }
+    if (Array.isArray(content)) {
+      return content.length > 0;
+    }
+    return false;
+  });
+
+  if (!hasValidContent) {
+    throw new OpenAIResponsesValidationError(
+      `OpenAI Responses API requires messages with valid content. ` +
+      `All ${nonSystemMessages.length} non-system message(s) have empty or invalid content.`,
+      {
+        messagesCount,
+        nonSystemCount: nonSystemMessages.length,
+        hasSystemMessage,
+        modelId,
+      }
+    );
+  }
+
+  // Log warning for debugging in development
+  if (process.env.NODE_ENV === "development") {
+    console.debug(
+      `[OpenAI Responses API] Input validation passed: ` +
+      `${nonSystemMessages.length} message(s), ${hasSystemMessage ? 'with' : 'without'} system instruction`
+    );
+  }
+
+  return { systemMessage, nonSystemMessages };
 }
 
 class OpenAIResponsesLanguageModel {
@@ -166,10 +266,12 @@ class OpenAIResponsesLanguageModel {
     warnings?: any[];
     request?: { body?: string };
   }> {
-    // Extract system message as instructions
+    // Validate and extract messages
     const messages = options.messages || [];
-    const systemMessage = messages.find((p: any) => p.role === "system");
-    const nonSystemMessages = messages.filter((p: any) => p.role !== "system");
+    const { systemMessage, nonSystemMessages } = validateAndExtractMessages(
+      messages,
+      this.modelId
+    );
 
     const input = this.convertMessagesToInput(nonSystemMessages);
 
@@ -260,10 +362,12 @@ class OpenAIResponsesLanguageModel {
     warnings?: any[];
     request?: { body?: string };
   }> {
-    // Extract system message as instructions
+    // Validate and extract messages
     const messages = options.messages || [];
-    const systemMessage = messages.find((p: any) => p.role === "system");
-    const nonSystemMessages = messages.filter((p: any) => p.role !== "system");
+    const { systemMessage, nonSystemMessages } = validateAndExtractMessages(
+      messages,
+      this.modelId
+    );
 
     const input = this.convertMessagesToInput(nonSystemMessages);
 

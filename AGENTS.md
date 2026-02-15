@@ -1,6 +1,6 @@
 # Agent Guide
 
-This guide is for coding agents working in `/home/tyler/deep-equity-research`.
+This guide is for coding agents working in `/home/tyler/railway-equity-research`.
 
 ## Must-Read Rules
 
@@ -29,7 +29,7 @@ pnpm build:standalone
 pnpm start
 
 # Lint
-pnpm lint
+npx eslint src/
 
 # Unit tests (Vitest)
 pnpm test
@@ -77,6 +77,7 @@ Notes:
 - Avoid `any` where possible; ESLint allows it but use sparingly.
 - Use `interface` for object shapes, `type` for unions/intersections.
 - Favor narrow types over broad unions; prefer `unknown` to `any` for inputs.
+- Use `zod` for runtime validation and type inference.
 
 ### React / Next.js
 
@@ -84,6 +85,7 @@ Notes:
 - Add `"use client"` at the top of client components.
 - Follow App Router conventions under `src/app/`.
 - Use dynamic imports for heavy client-only components when needed.
+- Use React 19 features and hooks.
 
 ### Imports
 
@@ -109,47 +111,77 @@ Prefer named imports; avoid default imports unless the module expects it.
 - Utilities: camelCase (`formatCurrency`).
 - Types/Interfaces: PascalCase (`ResearchTask`).
 - Constants: UPPER_SNAKE_CASE for true constants.
+- Files: kebab-case for components, camelCase for utilities.
 
 ### File Organization
 
 - Co-locate components with related logic/tests where practical.
 - Use barrel exports (`index.ts`) only when already used in that folder.
+- Keep API routes under `src/app/api/` following Next.js conventions.
+- Store utilities in `src/utils/`, hooks in `src/hooks/`, components in `src/components/`.
 
 ### Error Handling
 
 - Prefer explicit error handling and user-friendly messages.
 - Avoid swallowing errors; log or surface errors where appropriate.
 - Keep error boundaries in UI layers; avoid generic try/catch in render paths.
+- Use custom error classes from `src/utils/error.ts` for consistent error handling.
 
 ### State & Data
 
 - Zustand is used for app state (`src/store`).
 - Access outside React via `useStore.getState()`.
 - Persisted state may include encrypted fields; follow existing patterns.
+- Use localForage for client-side storage and caching.
 
 ### Styling
 
 - Tailwind CSS is the default styling system.
 - Prefer existing utility patterns before adding custom CSS.
 - Use `clsx`/`tailwind-merge` if conditional class logic is needed.
+- Use `class-variance-authority` for component variants.
+
+### Security
+
+- Never commit secrets or API keys to the repository.
+- Use environment variables for sensitive configuration.
+- Follow existing patterns for encryption and secure storage.
+- Validate all user inputs using zod schemas.
 
 ### Tests
 
 - Vitest unit tests live under `tests/`.
 - Playwright E2E tests live under `tests/e2e/`.
 - Keep tests deterministic; mock network where feasible.
+- Use `@testing-library/react` for component testing.
 
-## Project Structure (Quick)
+## Project Structure
 
 ```
-src/app/          Next.js App Router pages and API routes
-src/components/   UI and feature components (includes shadcn/ui)
-src/hooks/        Custom React hooks
-src/store/        Zustand stores
-src/utils/        Utilities and research engine logic
-tests/            Unit/integration tests
-tests/e2e/        Playwright tests
+src/
+├── app/              # Next.js App Router pages and API routes
+├── components/       # UI and feature components (includes shadcn/ui)
+├── hooks/            # Custom React hooks
+├── store/            # Zustand stores
+├── utils/            # Utilities and research engine logic
+├── constants/        # Application constants and prompts
+├── middleware/       # Next.js middleware
+├── locales/          # Internationalization files
+└── types.d.ts        # Global type definitions
+
+tests/                # Unit/integration tests
+tests/e2e/            # Playwright tests
 ```
+
+## Key Dependencies
+
+- **AI/ML**: ai-sdk, @ai-sdk/* providers for multiple LLM integrations
+- **UI**: Radix UI components, Tailwind CSS, Lucide icons
+- **State**: Zustand for state management
+- **Forms**: React Hook Form with resolvers
+- **Internationalization**: i18next
+- **Storage**: localForage for client-side persistence
+- **Parsing**: PDF.js, marked for document processing
 
 ## Quick References
 
@@ -157,3 +189,5 @@ tests/e2e/        Playwright tests
 - Vitest config: `vitest.config.ts`
 - Playwright config: `playwright.config.ts`
 - TS config: `tsconfig.json`
+- Package manager: `pnpm`
+- Node version: >= 22.x

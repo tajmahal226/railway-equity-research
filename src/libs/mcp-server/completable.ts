@@ -1,7 +1,6 @@
 import {
   ZodTypeAny,
   ZodType,
-  ZodErrorMap,
   ZodTypeDef,
   ParseInput,
   ParseReturnType,
