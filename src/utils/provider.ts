@@ -1,4 +1,5 @@
 import type { SettingStore, SettingFunction } from "@/store/setting";
+import { RESEARCH_AI_PROVIDERS } from "@/constants/provider-compat";
 
 const PROVIDER_STATE_KEY_MAP: Record<string, string> = {
   openai: "openAI",
@@ -49,22 +50,7 @@ export function resolveActiveProvider(
     }
   }
 
-  const fallbackOrder = [
-    "openai",
-    "anthropic",
-    "deepseek",
-    "xai",
-    "mistral",
-    "fireworks",
-    "moonshot",
-    "openrouter",
-    "google",
-    "cohere",
-    "together",
-    "groq",
-    "perplexity",
-    "ollama",
-  ];
+  const fallbackOrder = RESEARCH_AI_PROVIDERS;
 
   for (const candidate of fallbackOrder) {
     if (candidate === preferred) continue;

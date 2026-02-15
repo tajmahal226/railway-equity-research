@@ -1,29 +1,4 @@
-interface ModelDefaults {
-  thinkingModel: string;
-  networkingModel: string;
-}
-
-function getDefaultModelConfig(providerId?: string): ModelDefaults {
-  switch (providerId) {
-    case "anthropic":
-      return { thinkingModel: "claude-opus-4-1-20250805", networkingModel: "claude-sonnet-4-0-20250805" };
-    case "deepseek":
-      return { thinkingModel: "deepseek-reasoner", networkingModel: "deepseek-chat" };
-    case "mistral":
-      return { thinkingModel: "mistral-large-2411", networkingModel: "mistral-large-latest" };
-    case "xai":
-      return { thinkingModel: "grok-3", networkingModel: "grok-3" };
-    case "google":
-      return { thinkingModel: "gemini-2.5-flash-thinking", networkingModel: "gemini-2.5-pro" };
-    case "openrouter":
-      return { thinkingModel: "anthropic/claude-3.5-sonnet", networkingModel: "anthropic/claude-3.5-sonnet" };
-    case "ollama":
-      return { thinkingModel: "llama3.1:8b", networkingModel: "llama3.1:8b" };
-    case "openai":
-    default:
-      return { thinkingModel: "gpt-5", networkingModel: "gpt-5-turbo" };
-  }
-}
+import { getProviderModelDefaults } from "@/utils/provider";
 
 export interface ModelConfig {
   modelId: string;
@@ -52,8 +27,8 @@ export function resolveModelConfigs(body: BulkCompanyRequest): {
   const resolvedThinkingProvider = body.thinkingProviderId || body.taskProviderId || "openai";
   const resolvedTaskProvider = body.taskProviderId || body.thinkingProviderId || "openai";
 
-  const thinkingDefaults = getDefaultModelConfig(resolvedThinkingProvider);
-  const taskDefaults = getDefaultModelConfig(resolvedTaskProvider);
+  const thinkingDefaults = getProviderModelDefaults(resolvedThinkingProvider);
+  const taskDefaults = getProviderModelDefaults(resolvedTaskProvider);
 
   const thinkingModelConfig: ModelConfig = {
     modelId: body.thinkingModelId || thinkingDefaults.thinkingModel,
@@ -65,7 +40,7 @@ export function resolveModelConfigs(body: BulkCompanyRequest): {
   }
 
   const taskModelConfig: ModelConfig = {
-    modelId: body.taskModelId || taskDefaults.networkingModel,
+    modelId: body.taskModelId || taskDefaults.taskModel,
     providerId: resolvedTaskProvider,
   };
 

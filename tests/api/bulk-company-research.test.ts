@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { NextRequest } from "next/server";
 import {
   resolveModelConfigs,
   type BulkCompanyRequest,
 } from "@/app/api/bulk-company-research/model-config";
+import { POST } from "@/app/api/bulk-company-research/route";
+import { getProviderModelDefaults } from "@/utils/provider";
 
 // Test that CompanyDeepResearch initializes search provider correctly
 // for different search depths and provider IDs
@@ -66,6 +69,10 @@ describe("Bulk Company Research search provider configuration", () => {
         const researcher = new CompanyDeepResearch({
           companyName: "TestCo",
           searchDepth: depth,
+          subIndustries: [],
+          competitors: [],
+          researchSources: [],
+          language: "en-US",
           searchProviderId: providerId,
           thinkingModelConfig: { providerId: "openai", modelId: "gpt-4" },
           taskModelConfig: { providerId: "openai", modelId: "gpt-4" },
@@ -96,14 +103,15 @@ describe("Bulk Company Research model configuration resolution", () => {
     };
 
     const { thinkingModelConfig, taskModelConfig } = resolveModelConfigs(body);
+    const defaults = getProviderModelDefaults("mistral");
 
     expect(thinkingModelConfig).toEqual({
-      modelId: "mistral-large-2411",
+      modelId: defaults.thinkingModel,
       providerId: "mistral",
     });
 
     expect(taskModelConfig).toEqual({
-      modelId: "mistral-large-latest",
+      modelId: defaults.taskModel,
       providerId: "mistral",
     });
   });
@@ -115,14 +123,15 @@ describe("Bulk Company Research model configuration resolution", () => {
     };
 
     const { thinkingModelConfig, taskModelConfig } = resolveModelConfigs(body);
+    const defaults = getProviderModelDefaults("xai");
 
     expect(thinkingModelConfig).toEqual({
-      modelId: "grok-3",
+      modelId: defaults.thinkingModel,
       providerId: "xai",
     });
 
     expect(taskModelConfig).toEqual({
-      modelId: "grok-3",
+      modelId: defaults.taskModel,
       providerId: "xai",
     });
   });
@@ -159,16 +168,108 @@ describe("Bulk Company Research model configuration resolution", () => {
     };
 
     const { thinkingModelConfig, taskModelConfig } = resolveModelConfigs(body);
+    const defaults = getProviderModelDefaults("openai");
 
     expect(thinkingModelConfig).toEqual({
-      modelId: "gpt-5",
+      modelId: defaults.thinkingModel,
       providerId: "openai",
     });
 
     expect(taskModelConfig).toEqual({
-      modelId: "gpt-5-turbo",
+      modelId: defaults.taskModel,
       providerId: "openai",
     });
   });
+
+  it("uses shared provider defaults across the broader provider set", () => {
+    const providers = [
+      "anthropic",
+      "deepseek",
+      "mistral",
+      "xai",
+      "google",
+      "openrouter",
+      "openai",
+      "fireworks",
+      "moonshot",
+      "cohere",
+      "together",
+      "groq",
+      "perplexity",
+      "ollama",
+    ];
+
+    for (const providerId of providers) {
+      const body: BulkCompanyRequest = {
+        companies: ["Provider Default Co"],
+        thinkingProviderId: providerId,
+      };
+
+      const { thinkingModelConfig, taskModelConfig } = resolveModelConfigs(body);
+      const defaults = getProviderModelDefaults(providerId);
+
+      expect(thinkingModelConfig).toEqual({
+        modelId: defaults.thinkingModel,
+        providerId,
+      });
+
+      expect(taskModelConfig).toEqual({
+        modelId: defaults.taskModel,
+        providerId,
+      });
+    }
+  });
 });
 
+describe("POST /api/bulk-company-research provider validation", () => {
+  const createRequest = (payload: Record<string, unknown>) =>
+    new NextRequest("http://localhost/api/bulk-company-research", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+  it("returns 400 for unsupported thinkingProviderId", async () => {
+    const response = await POST(
+      createRequest({
+        companies: ["Acme"],
+        thinkingProviderId: "unsupported-provider",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.text()).resolves.toContain(
+      'Unsupported thinkingProviderId "unsupported-provider".'
+    );
+  });
+
+  it("returns 400 for unsupported taskProviderId", async () => {
+    const response = await POST(
+      createRequest({
+        companies: ["Acme"],
+        taskProviderId: "unsupported-provider",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.text()).resolves.toContain(
+      'Unsupported taskProviderId "unsupported-provider".'
+    );
+  });
+
+  it("returns 400 for unsupported searchProviderId", async () => {
+    const response = await POST(
+      createRequest({
+        companies: ["Acme"],
+        searchProviderId: "unsupported-search",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.text()).resolves.toContain(
+      'Unsupported searchProviderId "unsupported-search".'
+    );
+  });
+});

@@ -35,6 +35,12 @@ import {
   resolveModelConfigs,
   type BulkCompanyRequest,
 } from "./model-config";
+import {
+  BACKEND_AI_PROVIDERS,
+  SEARCH_PROVIDERS,
+  isBackendAIProvider,
+  isSearchProvider,
+} from "@/constants/provider-compat";
 
 // Configure Node.js runtime for long-running bulk research operations
 export const dynamic = "force-dynamic";
@@ -96,6 +102,27 @@ export async function POST(req: NextRequest) {
     const MAX_COMPANIES = 50;
     if (body.companies.length > MAX_COMPANIES) {
       return new Response(`Too many companies. Maximum is ${MAX_COMPANIES}`, { status: 400 });
+    }
+
+    if (body.thinkingProviderId && !isBackendAIProvider(body.thinkingProviderId)) {
+      return new Response(
+        `Unsupported thinkingProviderId "${body.thinkingProviderId}". Supported providers: ${BACKEND_AI_PROVIDERS.join(", ")}.`,
+        { status: 400 }
+      );
+    }
+
+    if (body.taskProviderId && !isBackendAIProvider(body.taskProviderId)) {
+      return new Response(
+        `Unsupported taskProviderId "${body.taskProviderId}". Supported providers: ${BACKEND_AI_PROVIDERS.join(", ")}.`,
+        { status: 400 }
+      );
+    }
+
+    if (body.searchProviderId && !isSearchProvider(body.searchProviderId)) {
+      return new Response(
+        `Unsupported searchProviderId "${body.searchProviderId}". Supported providers: ${SEARCH_PROVIDERS.join(", ")}.`,
+        { status: 400 }
+      );
     }
 
     // Step 3: Generate a unique ID for this bulk research session

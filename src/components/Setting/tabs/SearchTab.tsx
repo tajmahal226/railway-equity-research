@@ -26,6 +26,7 @@ import {
   SEARXNG_BASE_URL,
   TAVILY_BASE_URL,
 } from "@/constants/urls";
+import { getSearchProvidersForMode } from "@/constants/provider-compat";
 import { cn } from "@/utils/style";
 
 import HelpTip from "../HelpTip";
@@ -52,6 +53,17 @@ export default function SearchTab({
   handleSearchProviderChange,
   handleFinancialProviderChange,
 }: SearchTabProps) {
+  const availableSearchProviders = getSearchProvidersForMode(
+    mode === "proxy" ? "proxy" : "local"
+  );
+
+  const canSelectProvider = (providerId: string): boolean => {
+    return (
+      availableSearchProviders.includes(providerId) &&
+      !isDisabledSearchProvider(providerId)
+    );
+  };
+
   return (
 <TabsContent className="space-y-4  min-h-[250px]" value="search">
   <FormField
@@ -111,24 +123,23 @@ export default function SearchTab({
               <SelectItem value="model">
                 {t("setting.modelBuiltin")}
               </SelectItem>
-              {!isDisabledSearchProvider("tavily") ? (
+              {canSelectProvider("tavily") ? (
                 <SelectItem value="tavily">Tavily</SelectItem>
               ) : null}
-              {!isDisabledSearchProvider("firecrawl") ? (
+              {canSelectProvider("firecrawl") ? (
                 <SelectItem value="firecrawl">
                   Firecrawl
                 </SelectItem>
               ) : null}
-              {!isDisabledSearchProvider("exa") &&
-              mode === "proxy" ? (
+              {canSelectProvider("exa") ? (
                 <SelectItem value="exa">Exa</SelectItem>
               ) : null}
-              {!isDisabledSearchProvider("bocha") ? (
+              {canSelectProvider("bocha") ? (
                 <SelectItem value="bocha">
                   {t("setting.bocha")}
                 </SelectItem>
               ) : null}
-              {!isDisabledSearchProvider("searxng") ? (
+              {canSelectProvider("searxng") ? (
                 <SelectItem value="searxng">SearXNG</SelectItem>
               ) : null}
             </SelectContent>
