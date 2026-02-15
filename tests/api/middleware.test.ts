@@ -75,7 +75,7 @@ vi.mock("@/utils/signature", () => ({
 }));
 
 import { NextRequest as MockNextRequest } from "next/server";
-import { middleware } from "../../src/middleware";
+import { proxy as middleware } from "../../src/proxy";
 
 const buildRequest = (init: {
   headers?: Record<string, string>;
