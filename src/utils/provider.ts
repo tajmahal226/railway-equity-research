@@ -18,9 +18,22 @@ export function getProviderStateKey(provider: string): string {
 export function getProviderApiKey(
   store: Record<string, any>,
   provider: string,
+  options?: { allowGenericFallback?: boolean },
 ): string {
+  const allowGenericFallback = options?.allowGenericFallback !== false;
   const keyName = `${getProviderStateKey(provider)}ApiKey`;
-  return store[keyName] || store.apiKey || "";
+  const providerKey = store[keyName];
+
+  if (typeof providerKey === "string" && providerKey.trim()) {
+    return providerKey;
+  }
+
+  if (!allowGenericFallback) {
+    return "";
+  }
+
+  const genericKey = store.apiKey;
+  return typeof genericKey === "string" ? genericKey : "";
 }
 
 /**

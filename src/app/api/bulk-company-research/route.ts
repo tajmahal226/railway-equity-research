@@ -44,7 +44,7 @@ import {
 
 // Configure Node.js runtime for long-running bulk research operations
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 minutes (Vercel Hobby max)
+export const maxDuration = 1800; // Align with bulk research timeout budget
 
 // Define how many companies to research at the same time
 // Reduced from 3 to 2 to prevent timeouts with powerful models
@@ -203,10 +203,9 @@ export async function POST(req: NextRequest) {
             });
           },
           onError: (error) => {
-            safeSendEvent("company-error", {
-              companyName,
-              error: error.message
-            });
+            logger.warn(
+              `[Bulk Research ${bulkResearchId}] Non-fatal company error callback for ${companyName}: ${error.message}`,
+            );
           },
         });
 

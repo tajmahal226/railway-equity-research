@@ -177,7 +177,9 @@ export default function BulkCompanyResearch() {
       const thinkingApiKey = getProviderApiKey(settingStore, currentProvider);
       const taskApiKey = getProviderApiKey(settingStore, currentProvider); // Usually same provider
       const searchProvider = settingStore.searchProvider || "model";
-      const searchApiKey = getProviderApiKey(settingStore, searchProvider);
+      const searchApiKey = getProviderApiKey(settingStore, searchProvider, {
+        allowGenericFallback: false,
+      });
 
       // Prepare the request body
       const requestBody = {
@@ -202,6 +204,7 @@ export default function BulkCompanyResearch() {
       // Make the API call with extended timeout for bulk operations
       // Bulk operations with bleeding-edge models need more time
       const controller = new AbortController();
+      abortControllerRef.current = controller;
       const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout
       
       const accessPassword = settingStore.accessPassword?.trim();
@@ -341,6 +344,7 @@ export default function BulkCompanyResearch() {
                     // All companies processed
                     logger.log("Bulk research complete:", data);
                     setIsSearching(false);
+                    abortControllerRef.current = null;
                     await reader.cancel();
                     return;
 
@@ -365,6 +369,7 @@ export default function BulkCompanyResearch() {
     } catch (error) {
       console.error("Bulk company research error:", error);
       setIsSearching(false);
+      abortControllerRef.current = null;
       alert(error instanceof Error && error.message ? error.message : "Research failed");
     }
   };

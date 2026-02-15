@@ -42,6 +42,12 @@ describe("getProviderApiKey", () => {
   it("works with search providers", () => {
     expect(getProviderApiKey(store, "tavily")).toBe("tavily-key");
   });
+
+  it("can disable generic fallback for provider keys", () => {
+    expect(
+      getProviderApiKey(store, "anthropic", { allowGenericFallback: false }),
+    ).toBe("");
+  });
 });
 
 describe("resolveProviderModels", () => {

@@ -220,7 +220,17 @@ export class CompanyDeepResearch {
       
       // Step 4: Initialize search provider configuration if deep or medium research
       if (this.config.searchDepth !== "fast") {
-        const searchProviderId = this.config.searchProviderId || "tavily";
+        const requestedSearchProviderId = this.config.searchProviderId || "tavily";
+        const searchProviderId =
+          requestedSearchProviderId === "model"
+            ? "tavily"
+            : requestedSearchProviderId;
+
+        if (requestedSearchProviderId === "model") {
+          logger.warn(
+            "[CompanyDeepResearch] searchProviderId='model' is not supported for company deep research; defaulting to tavily.",
+          );
+        }
         
         // Create a search function that uses the provider
         this.searchProvider = async (query: string) => {

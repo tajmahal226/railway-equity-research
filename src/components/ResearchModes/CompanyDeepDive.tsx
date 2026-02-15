@@ -147,7 +147,7 @@ export default function CompanyDeepDive() {
 
     // Check if API key is configured
     const apiKey = getProviderApiKey(settingStore, currentProvider);
-    if (!apiKey) {
+    if (currentProvider !== "ollama" && !apiKey) {
       toast.error(t("errors.noApiKeyConfigured", "Please add your API key in Settings. The app requires you to bring your own API key."));
       useGlobalStore.getState().setOpenSetting(true);
       return;
@@ -195,7 +195,9 @@ export default function CompanyDeepDive() {
       const thinkingApiKey = getProviderApiKey(settingStore, currentProvider);
       const taskApiKey = getProviderApiKey(settingStore, currentProvider); // Usually same provider
       const searchProvider = settingStore.searchProvider || "model";
-      const searchApiKey = getProviderApiKey(settingStore, searchProvider);
+      const searchApiKey = getProviderApiKey(settingStore, searchProvider, {
+        allowGenericFallback: false,
+      });
 
       // Prepare the request body with all company information and user's AI settings
       const requestBody = {

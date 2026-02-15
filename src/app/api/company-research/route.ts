@@ -41,7 +41,7 @@ import {
 
 // Configure Node.js runtime for long-running research operations
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 minutes (Vercel Hobby max)
+export const maxDuration = 600; // Align with deep-research timeout budget
 
 // Define the shape of our request body for TypeScript type safety
 interface CompanyResearchRequest {
@@ -130,6 +130,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!['fast', 'medium', 'deep'].includes(body.searchDepth)) {
+      return new Response(
+        `Invalid searchDepth "${String(body.searchDepth)}". Supported values: fast, medium, deep.`,
+        { status: 400 }
+      );
+    }
+
+    const resolvedThinkingProvider = body.thinkingProviderId || body.taskProviderId || "openai";
+    const resolvedTaskProvider = body.taskProviderId || body.thinkingProviderId || "openai";
+    const thinkingDefaults = getProviderModelDefaults(resolvedThinkingProvider);
+    const taskDefaults = getProviderModelDefaults(resolvedTaskProvider);
+    const resolvedThinkingModel = body.thinkingModelId || thinkingDefaults.thinkingModel;
+    const resolvedTaskModel = body.taskModelId || taskDefaults.taskModel;
+    const resolvedSearchProviderId =
+      body.searchDepth === "fast"
+        ? body.searchProviderId
+        : (body.searchProviderId === "model" || !body.searchProviderId)
+          ? "tavily"
+          : body.searchProviderId;
+
     // Step 3: Generate a unique ID for this research session
     // This helps track the research in logs and for debugging
     const researchId = nanoid();
@@ -156,48 +176,22 @@ export async function POST(req: NextRequest) {
       language: body.language || "en-US",
       
       // AI provider configuration with smart defaults for all providers
-      thinkingModelConfig: (() => {
-        if (body.thinkingModelId && body.thinkingProviderId) {
-          return {
-            modelId: body.thinkingModelId,
-            providerId: body.thinkingProviderId,
-            apiKey: body.thinkingApiKey,
-            reasoningEffort: body.thinkingReasoningEffort,
-          };
-        } else {
-          const resolvedProvider = body.thinkingProviderId || "openai";
-          const defaults = getProviderModelDefaults(resolvedProvider);
-          return {
-            modelId: defaults.thinkingModel,
-            providerId: resolvedProvider,
-            apiKey: undefined, // Will use server-side API key
-            reasoningEffort: body.thinkingReasoningEffort,
-          };
-        }
-      })(),
+      thinkingModelConfig: {
+        modelId: resolvedThinkingModel,
+        providerId: resolvedThinkingProvider,
+        apiKey: body.thinkingApiKey,
+        reasoningEffort: body.thinkingReasoningEffort,
+      },
 
-      taskModelConfig: (() => {
-        if (body.taskModelId && body.taskProviderId) {
-          return {
-            modelId: body.taskModelId,
-            providerId: body.taskProviderId,
-            apiKey: body.taskApiKey,
-            reasoningEffort: body.taskReasoningEffort,
-          };
-        } else {
-          const resolvedProvider = body.taskProviderId || "openai";
-          const defaults = getProviderModelDefaults(resolvedProvider);
-          return {
-            modelId: defaults.taskModel,
-            providerId: resolvedProvider,
-            apiKey: undefined, // Will use server-side API key
-            reasoningEffort: body.taskReasoningEffort,
-          };
-        }
-      })(),
+      taskModelConfig: {
+        modelId: resolvedTaskModel,
+        providerId: resolvedTaskProvider,
+        apiKey: body.taskApiKey,
+        reasoningEffort: body.taskReasoningEffort,
+      },
       
       // Search provider configuration
-      searchProviderId: body.searchProviderId,
+      searchProviderId: resolvedSearchProviderId,
       searchProviderApiKey: body.searchApiKey,
       
       // Callback functions to send real-time updates to the client
