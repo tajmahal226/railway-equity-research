@@ -10,7 +10,7 @@ interface PendingRequest {
 
 class RequestManager {
   private pendingRequests = new Map<string, PendingRequest>();
-  private requestSequence = new Map<string, number>();
+  private requestQueues = new Map<string, Promise<void>>();
   private readonly CACHE_DURATION = 5000; // 5 seconds cache for duplicate requests
 
   /**
@@ -102,31 +102,23 @@ class RequestManager {
     queueName: string,
     requestFn: () => Promise<T>
   ): Promise<T> {
-    // Get current sequence number
-    const currentSeq = this.requestSequence.get(queueName) || 0;
-    const mySeq = currentSeq + 1;
-    this.requestSequence.set(queueName, mySeq);
+    const previous = this.requestQueues.get(queueName) ?? Promise.resolve();
+    let releaseCurrent: (() => void) | null = null;
+    const current = new Promise<void>(resolve => {
+      releaseCurrent = resolve;
+    });
+    const tail = previous.then(() => current);
+    this.requestQueues.set(queueName, tail);
 
-    // Wait for previous requests to complete
-    const activeKey = `${queueName}_active`;
-    while (true) {
-      const activeSeq = this.requestSequence.get(activeKey) || 0;
-      if (activeSeq < mySeq - 1) {
-        // Previous requests have not finished; wait until the last completed
-        // sequence is strictly behind this request's sequence number.
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } else {
-        break;
-      }
-    }
+    await previous;
 
     try {
       return await requestFn();
     } finally {
-      // Mark as complete. `_active` always reflects the latest finished
-      // sequence to prevent later callers from advancing before prior
-      // requests resolve.
-      this.requestSequence.set(activeKey, mySeq);
+      releaseCurrent?.();
+      if (this.requestQueues.get(queueName) === tail) {
+        this.requestQueues.delete(queueName);
+      }
     }
   }
 
@@ -163,7 +155,7 @@ class RequestManager {
    */
   reset() {
     this.abortRequests();
-    this.requestSequence.clear();
+    this.requestQueues.clear();
   }
 }
 
