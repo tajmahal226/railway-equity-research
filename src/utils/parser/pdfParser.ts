@@ -10,7 +10,8 @@ async function getTextContent(file: string | ArrayBuffer) {
 
     let fullText = "";
 
-    // 循环处理每一页
+    // Use array and join for better performance with large PDFs
+    const pages: string[] = [];
     for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
       const page = await pdfDocument.getPage(pageNum);
       const textContent = await page.getTextContent();
@@ -20,8 +21,9 @@ async function getTextContent(file: string | ArrayBuffer) {
         .filter((item) => "str" in item)
         .map((item) => item.str)
         .join(" ");
-      fullText += pageText + "\n"; // 可以添加换行符来区分页面
+      pages.push(pageText);
     }
+    fullText = pages.join("\n");
 
     return fullText;
   } catch (error) {

@@ -59,6 +59,10 @@ export function removeJsonMarkdown(text: string) {
 }
 
 export function addQuoteBeforeAllLines(text: string = "") {
+  // Optimize by avoiding array allocation for single-line text
+  if (!text.includes("\n")) {
+    return `> ${text}`;
+  }
   return text
     .split("\n")
     .map((line) => `> ${line}`)
