@@ -103,7 +103,7 @@ class RequestManager {
     requestFn: () => Promise<T>
   ): Promise<T> {
     const previous = this.requestQueues.get(queueName) ?? Promise.resolve();
-    let releaseCurrent: (() => void) | null = null;
+    let releaseCurrent!: () => void;
     const current = new Promise<void>(resolve => {
       releaseCurrent = resolve;
     });
@@ -115,7 +115,7 @@ class RequestManager {
     try {
       return await requestFn();
     } finally {
-      releaseCurrent?.();
+      releaseCurrent();
       if (this.requestQueues.get(queueName) === tail) {
         this.requestQueues.delete(queueName);
       }
