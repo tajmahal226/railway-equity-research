@@ -18,7 +18,7 @@ import {
 import { outputGuidelinesPrompt } from "@/constants/prompts";
 import { isNetworkingModel } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
-import { pick, unique, flat, isFunction } from "radash";
+import { pick, unique, isFunction } from "radash";
 
 export interface DeepResearchOptions {
   AIProvider: {
@@ -372,8 +372,10 @@ class DeepResearch {
                     const index = groundingChunkIndices.map(
                       (idx: number) => `[${idx + 1}]`
                     );
-                    content = content.replaceAll(
-                      segment.text,
+                    // Escape regex special characters in segment text for safe replacement
+                    const escapedText = segment.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    content = content.replace(
+                      new RegExp(escapedText, 'g'),
                       `${segment.text}${index.join("")}`
                     );
                   }
@@ -382,7 +384,10 @@ class DeepResearch {
             }
           } else if (p.providerOptions?.openai) {
             // Fixed the problem that OpenAI cannot generate markdown reference link syntax properly in Chinese context
-            content = content.replaceAll("【", "[").replaceAll("】", "]");
+            // Single pass replacement for both bracket types
+            content = content.replace(/[【】]/g, (match) =>
+              match === "【" ? "[" : "]"
+            );
           }
         }
       }
@@ -408,7 +413,7 @@ class DeepResearch {
             .map(
               (item, idx) =>
                 `[${idx + 1}]: ${item.url}${
-                  item.title ? ` "${item.title.replaceAll('"', " ")}"` : ""
+                  item.title ? ` "${item.title.replace(/"/g, " ")}"` : ""
                 }`
             )
             .join("\n");
@@ -445,15 +450,21 @@ class DeepResearch {
   ): Promise<FinalReportResult> {
     this.onMessage("progress", { step: "final-report", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
-    const learnings = tasks.map((item) => item.learning);
-    const sources: Source[] = unique(
-      flat(tasks.map((item) => item.sources || [])),
-      (item) => item.url
-    );
-    const images: ImageSource[] = unique(
-      flat(tasks.map((item) => item.images || [])),
-      (item) => item.url
-    );
+
+    // Optimize by combining multiple passes into single pass
+    const learnings: string[] = [];
+    const allSources: Source[] = [];
+    const allImages: ImageSource[] = [];
+
+    for (const task of tasks) {
+      learnings.push(task.learning);
+      if (task.sources) allSources.push(...task.sources);
+      if (task.images) allImages.push(...task.images);
+    }
+
+    // Deduplicate sources and images
+    const sources: Source[] = unique(allSources, (item) => item.url);
+    const images: ImageSource[] = unique(allImages, (item) => item.url);
     const result = streamText({
       model: await this.getThinkingModel(),
       system: [getSystemPrompt(), outputGuidelinesPrompt].join("\n\n"),
@@ -499,7 +510,7 @@ class DeepResearch {
               .map(
                 (item, idx) =>
                   `[${idx + 1}]: ${item.url}${
-                    item.title ? ` "${item.title.replaceAll('"', " ")}"` : ""
+                    item.title ? ` "${item.title.replace(/"/g, " ")}"` : ""
                   }`
               )
               .join("\n");
@@ -512,8 +523,7 @@ class DeepResearch {
 
     const title = content
       .split("\n")[0]
-      .replaceAll("#", "")
-      .replaceAll("*", "")
+      .replace(/[#*]/g, "")
       .trim();
 
     const finalReportResult: FinalReportResult = {

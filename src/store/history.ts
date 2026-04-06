@@ -46,20 +46,28 @@ export const useHistoryStore = create(
         if (current) return clone(current);
       },
       update: (id, taskStore) => {
-        const newHistory = get().history.map((item) => {
-          if (item.id === id) {
-            return {
-              ...clone(item),
-              ...clone(taskStore),
-              id: item.id,
-              createdAt: item.createdAt,
-              updatedAt: Date.now(),
-            } as ResearchHistory;
-          } else {
-            return item;
-          }
-        });
-        set(() => ({ history: [...newHistory] }));
+        const history = get().history;
+        const index = history.findIndex((item) => item.id === id);
+
+        if (index === -1) return false;
+
+        // Clone only the item being updated, not all items
+        const updatedItem = {
+          ...clone(history[index]),
+          ...clone(taskStore),
+          id: history[index].id,
+          createdAt: history[index].createdAt,
+          updatedAt: Date.now(),
+        } as ResearchHistory;
+
+        // Create new array with updated item
+        const newHistory = [
+          ...history.slice(0, index),
+          updatedItem,
+          ...history.slice(index + 1),
+        ];
+
+        set(() => ({ history: newHistory }));
         return true;
       },
       remove: (id) => {

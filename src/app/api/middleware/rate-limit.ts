@@ -91,21 +91,26 @@ class RateLimiter {
 
   /**
    * Remove oldest entries when max size is exceeded
-   * Uses a simple FIFO approach (first keys in Map are oldest)
+   * Uses lightweight [key, timestamp] tuples to minimize per-entry memory,
+   * then performs a full sort to find the oldest 10% of entries to evict.
    */
   private evictOldestEntries() {
-    const entries = Array.from(this.requests.entries());
-    // Sort by oldest timestamp in each entry
-    entries.sort((a, b) => {
-      const aOldest = a[1][0] ?? Infinity;
-      const bOldest = b[1][0] ?? Infinity;
-      return aOldest - bOldest;
-    });
-
-    // Remove oldest 10% of entries
     const toRemove = Math.floor(MAX_ENTRIES * 0.1);
-    for (let i = 0; i < toRemove && i < entries.length; i++) {
-      this.requests.delete(entries[i][0]);
+    if (toRemove === 0) return;
+
+    // Collect entries with their oldest timestamp as lightweight tuples
+    const entriesWithAge: Array<[string, number]> = [];
+    for (const [key, timestamps] of this.requests.entries()) {
+      const oldestTimestamp = timestamps[0] ?? Infinity;
+      entriesWithAge.push([key, oldestTimestamp]);
+    }
+
+    // Full sort by oldest timestamp to identify entries to evict
+    entriesWithAge.sort((a, b) => a[1] - b[1]);
+
+    // Remove only the oldest entries
+    for (let i = 0; i < toRemove && i < entriesWithAge.length; i++) {
+      this.requests.delete(entriesWithAge[i][0]);
     }
   }
 

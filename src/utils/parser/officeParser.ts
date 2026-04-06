@@ -228,29 +228,32 @@ export function parseWord(
           const xmlParagraphNodesList =
             parseXMLString(xmlContent).getElementsByTagName("w:p");
           /** Store all the text content to respond */
-          responseText.push(
-            Array.from(xmlParagraphNodesList)
-              // Filter paragraph nodes than do not have any text nodes which are identifiable by w:t tag
-              .filter(
-                (paragraphNode) =>
-                  paragraphNode.getElementsByTagName("w:t").length != 0
-              )
-              .map((paragraphNode) => {
-                // Find text nodes with w:t tags
-                const xmlTextNodeList =
-                  paragraphNode.getElementsByTagName("w:t");
-                // Join the texts within this paragraph node without any spaces or delimiters.
-                return Array.from(xmlTextNodeList)
-                  .filter(
-                    (textNode) =>
-                      textNode.childNodes[0] && textNode.childNodes[0].nodeValue
-                  )
-                  .map((textNode) => textNode.childNodes[0].nodeValue)
-                  .join("");
-              })
-              // Join each paragraph text with a new line delimiter.
-              .join(config.newlineDelimiter ?? "\n")
-          );
+          const paragraphs: string[] = [];
+
+          // Optimize by caching text node queries
+          for (let i = 0; i < xmlParagraphNodesList.length; i++) {
+            const paragraphNode = xmlParagraphNodesList[i];
+            const xmlTextNodeList = paragraphNode.getElementsByTagName("w:t");
+
+            // Skip empty paragraphs
+            if (xmlTextNodeList.length === 0) continue;
+
+            // Extract text from text nodes
+            const textParts: string[] = [];
+            for (let j = 0; j < xmlTextNodeList.length; j++) {
+              const textNode = xmlTextNodeList[j];
+              const value = textNode.childNodes[0]?.nodeValue;
+              if (value) {
+                textParts.push(value);
+              }
+            }
+
+            if (textParts.length > 0) {
+              paragraphs.push(textParts.join(""));
+            }
+          }
+
+          responseText.push(paragraphs.join(config.newlineDelimiter ?? "\n"));
         });
         // Respond by calling the Callback function.
         resolve(responseText.join(config.newlineDelimiter ?? "\n"));
@@ -344,27 +347,32 @@ export function parsePowerPoint(
           const xmlParagraphNodesList =
             parseXMLString(xmlContent).getElementsByTagName("a:p");
           /** Store all the text content to respond */
-          responseText.push(
-            Array.from(xmlParagraphNodesList)
-              // Filter paragraph nodes than do not have any text nodes which are identifiable by a:t tag
-              .filter(
-                (paragraphNode) =>
-                  paragraphNode.getElementsByTagName("a:t").length != 0
-              )
-              .map((paragraphNode) => {
-                /** Find text nodes with a:t tags */
-                const xmlTextNodeList =
-                  paragraphNode.getElementsByTagName("a:t");
-                return Array.from(xmlTextNodeList)
-                  .filter(
-                    (textNode) =>
-                      textNode.childNodes[0] && textNode.childNodes[0].nodeValue
-                  )
-                  .map((textNode) => textNode.childNodes[0].nodeValue)
-                  .join("");
-              })
-              .join(config.newlineDelimiter ?? "\n")
-          );
+          const paragraphs: string[] = [];
+
+          // Optimize by caching text node queries
+          for (let i = 0; i < xmlParagraphNodesList.length; i++) {
+            const paragraphNode = xmlParagraphNodesList[i];
+            const xmlTextNodeList = paragraphNode.getElementsByTagName("a:t");
+
+            // Skip empty paragraphs
+            if (xmlTextNodeList.length === 0) continue;
+
+            // Extract text from text nodes
+            const textParts: string[] = [];
+            for (let j = 0; j < xmlTextNodeList.length; j++) {
+              const textNode = xmlTextNodeList[j];
+              const value = textNode.childNodes[0]?.nodeValue;
+              if (value) {
+                textParts.push(value);
+              }
+            }
+
+            if (textParts.length > 0) {
+              paragraphs.push(textParts.join(""));
+            }
+          }
+
+          responseText.push(paragraphs.join(config.newlineDelimiter ?? "\n"));
         });
 
         // Respond by calling the Callback function.
