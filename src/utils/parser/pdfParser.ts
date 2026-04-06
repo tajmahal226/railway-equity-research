@@ -23,7 +23,7 @@ async function getTextContent(file: string | ArrayBuffer) {
         .join(" ");
       pages.push(pageText);
     }
-    fullText = pages.join("\n");
+    fullText = pages.length > 0 ? pages.join("\n") + "\n" : "";
 
     return fullText;
   } catch (error) {

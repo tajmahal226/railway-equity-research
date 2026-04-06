@@ -91,21 +91,21 @@ class RateLimiter {
 
   /**
    * Remove oldest entries when max size is exceeded
-   * Uses a more efficient approach with partial sorting
+   * Uses lightweight [key, timestamp] tuples to minimize per-entry memory,
+   * then performs a full sort to find the oldest 10% of entries to evict.
    */
   private evictOldestEntries() {
     const toRemove = Math.floor(MAX_ENTRIES * 0.1);
     if (toRemove === 0) return;
 
-    // Collect entries with their oldest timestamp
+    // Collect entries with their oldest timestamp as lightweight tuples
     const entriesWithAge: Array<[string, number]> = [];
     for (const [key, timestamps] of this.requests.entries()) {
       const oldestTimestamp = timestamps[0] ?? Infinity;
       entriesWithAge.push([key, oldestTimestamp]);
     }
 
-    // Use partial sort - only find the N oldest entries
-    // This is more efficient than full sort when we only need top 10%
+    // Full sort by oldest timestamp to identify entries to evict
     entriesWithAge.sort((a, b) => a[1] - b[1]);
 
     // Remove only the oldest entries

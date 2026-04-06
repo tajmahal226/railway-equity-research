@@ -384,8 +384,10 @@ class DeepResearch {
             }
           } else if (p.providerOptions?.openai) {
             // Fixed the problem that OpenAI cannot generate markdown reference link syntax properly in Chinese context
-            // Use single pass replace with regex for better performance
-            content = content.replace(/【/g, "[").replace(/】/g, "]");
+            // Single pass replacement for both bracket types
+            content = content.replace(/[【】]/g, (match) =>
+              match === "【" ? "[" : "]"
+            );
           }
         }
       }
