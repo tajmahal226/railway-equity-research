@@ -59,7 +59,8 @@ export function isSearchProvider(provider: string | undefined | null): boolean {
   return SEARCH_PROVIDER_SET.has(normalizeProviderToken(provider));
 }
 
-export function getSearchProvidersForMode(mode: 'local' | 'proxy'): string[] {
+export function getSearchProvidersForMode(_mode: 'local' | 'proxy'): string[] {
+  void _mode;
   return [...SEARCH_PROVIDERS];
 }
 

@@ -540,6 +540,7 @@ export function createOpenAIResponsesProvider(options: ResponsesProviderOptions)
   };
 
   return function openaiResponses(modelId: string, _settings?: any) {
+    void _settings;
     return new OpenAIResponsesLanguageModel(modelId, config);
   };
 }

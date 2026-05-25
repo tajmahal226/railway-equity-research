@@ -89,6 +89,7 @@ class RequestManager {
    * This is a heuristic check - returns false if we can't determine state
    */
   private isPromiseSettled(_promise: Promise<any>): boolean {
+    void _promise;
     // We can't reliably check promise state in JS,
     // but we can track it via a wrapper if needed.
     // For now, assume not settled - abort will be no-op if already done.
