@@ -16,7 +16,7 @@ export const preferredRegion = [
 const API_PROXY_BASE_URL = process.env.COHERE_API_BASE_URL || COHERE_BASE_URL;
 
 const handler = createProxyHandler(API_PROXY_BASE_URL, {
-  headers: (req) => ({
+  headers: () => ({
     "X-Client-Name": "deep-equity-research",
   }),
 });
