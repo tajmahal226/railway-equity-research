@@ -276,6 +276,7 @@ export function createXAIProvider(options: XAIProviderOptions) {
   };
 
   return function xai(modelId: string, _settings?: any) {
+    void _settings;
     return new XAILanguageModel(modelId, config);
   };
 }
