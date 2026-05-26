@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
-import { streamText, smoothStream, type JSONValue, type Tool } from "ai";
+import { streamText } from "ai";
 import { parsePartialJson } from 'ai';
-import { openai } from "@ai-sdk/openai";
 import { useTranslation } from "react-i18next";
 import Plimit from "p-limit";
 import useModelProvider from "@/hooks/useAiProvider";
@@ -23,25 +22,17 @@ import {
   writeFinalReportPrompt,
   getSERPQuerySchema,
 } from "@/utils/deep-research/prompts";
-import { isNetworkingModel } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { handleError } from "@/utils/error";
 import { pick, flat, unique } from "radash";
 import { logger } from "@/utils/logger";
-
-type ProviderOptions = Record<string, Record<string, JSONValue>>;
-type Tools = Record<string, Tool>;
-
-function getResponseLanguagePrompt() {
-  return `\n\n**Respond in the same language as the user's language**`;
-}
-
-function smoothTextStream(type: "character" | "word" | "line") {
-  return smoothStream({
-    chunking: type === "character" ? /./ : type,
-    delayInMs: 0,
-  });
-}
+import {
+  createSearchModelFactory,
+  getResponseLanguagePrompt,
+  getSearchProviderOptions,
+  getSearchTools,
+  smoothTextStream,
+} from "@/hooks/deep-research/helpers";
 
 function useDeepResearch() {
   const { t } = useTranslation();
@@ -191,64 +182,28 @@ function useDeepResearch() {
       setStatus(t("research.common.research"));
       const plimit = Plimit(parallelSearch);
       const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
-      const createModel = (model: string) => {
-        // Enable Gemini's built-in search tool
-        if (
-          enableSearch &&
-          searchProvider === "model" &&
-          provider === "google" &&
-          isNetworkingModel(model)
-        ) {
-          return createModelProvider(model, { useSearchGrounding: true });
-        } else {
-          return createModelProvider(model);
-        }
-      };
-      const getTools = (model: string) => {
-        // Enable OpenAI's built-in search tool
-        if (enableSearch && searchProvider === "model") {
-          if (provider === "openai" && model.startsWith("gpt-4o")) {
-            return {
-              web_search_preview: openai.tools.webSearchPreview({
-                // optional configuration:
-                searchContextSize: "medium",
-              }),
-            } as unknown as Tools;
-          }
-        }
-        return undefined;
-      };
-      const getProviderOptions = (model: string) => {
-        if (enableSearch && searchProvider === "model") {
-          // Enable OpenRouter's built-in search tool
-          if (provider === "openrouter") {
-            return {
-              openrouter: {
-                plugins: [
-                  {
-                    id: "web",
-                    max_results: searchMaxResult, // Defaults to 5
-                  },
-                ],
-              },
-            } as ProviderOptions;
-          } else if (
-            provider === "xai" &&
-            model.startsWith("grok-3") &&
-            !model.includes("mini")
-          ) {
-            return {
-              xai: {
-                search_parameters: {
-                  mode: "auto",
-                  max_search_results: searchMaxResult,
-                },
-              },
-            } as ProviderOptions;
-          }
-        }
-        return undefined;
-      };
+      const createModel = createSearchModelFactory({
+        enableSearch,
+        searchProvider,
+        provider,
+        createModelProvider,
+      });
+      const getTools = (model: string) =>
+        getSearchTools({
+          enableSearch,
+          searchProvider,
+          provider,
+          model,
+          searchMaxResult,
+        });
+      const getProviderOptions = (model: string) =>
+        getSearchProviderOptions({
+          enableSearch,
+          searchProvider,
+          provider,
+          model,
+          searchMaxResult,
+        });
       await Promise.all(
         queries.map((item) =>
           plimit(async () => {
